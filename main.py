@@ -12,13 +12,13 @@ dfs_list = []
 for file in os.listdir(PATH):
     file_path = os.path.join(PATH, file)
 
-    if file.endswith(".xlsx"):
-        df = pd.read_excel(file_path)
-        dfs[file] = df
-        dfs_list.append(df)
-        # print(f"Loaded Excel: {file} - Shape: {df.shape}")
+    # if file.endswith(".xlsx"):
+    #     df = pd.read_excel(file_path)
+    #     dfs[file] = df
+    #     dfs_list.append(df)
+    #     # print(f"Loaded Excel: {file} - Shape: {df.shape}")
 
-    elif file.endswith(".csv"):
+    if file.endswith(".csv"):
         df = pd.read_csv(file_path)
         dfs[file] = df
         dfs_list.append(df)
@@ -27,5 +27,7 @@ for file in os.listdir(PATH):
 
 # print(dfs_list[0].columns)
 
-for col in dfs_list[0].columns:
-    print(col)
+for i in range(len(dfs_list)):
+    for col in dfs_list[i].columns:
+        print(col)
+    print("\n")
