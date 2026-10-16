@@ -27,7 +27,7 @@ for file in os.listdir(PATH):
 
 # print(dfs_list[0].columns)
 
-for i in range(len(dfs_list)):
-    for col in dfs_list[i].columns:
-        print(col)
-    print("\n")
+# for i in range(len(dfs_list)):
+#     for col in dfs_list[i].columns:
+#         print(col)
+#     print("\n")
