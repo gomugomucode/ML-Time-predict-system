@@ -94,6 +94,13 @@ ML queue/
 
 ## 📖 Quick Links & Documentation
 
+### 📑 Documentation & Codebase Audit (`docs/`)
+- 📑 **Documentation Center Index:** [`docs/README.md`](docs/README.md) — Documentation navigation & audit portal.
+- 📋 **Codebase & Dataset Audit:** [`docs/AUDIT.md`](docs/AUDIT.md) — Full audit of all 12,017 records, statistical distributions, code state, and SLAs.
+- 🔄 **Change History & Changelog:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — Chronological log of all commits, refactors, and feature additions.
+- ✅ **Task Execution Matrix:** [`docs/TASKS.md`](docs/TASKS.md) — Sprint 1 priorities, phase-by-phase status, and deliverables.
+- 📐 **Architecture & Implementation Plan:** [`docs/PLAN.md`](docs/PLAN.md) — Dual-engine prediction topology, data pipeline, and delivery roadmap.
+
 ### 📋 Project Planning & Management
 - 📋 **Master Implementation Plan:** [`PLAN.md`](PLAN.md) — Vision, SLAs, 8-phase methodology, dual-engine fallback, and risk mitigations.
 - ✅ **Actionable Task Checklist:** [`TASKS.md`](TASKS.md) — Prioritized checklist (`P0`, `P1`, `P2`) with status tracking and sprint focus.
