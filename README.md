@@ -21,33 +21,37 @@ This repository implements a **dual-engine waiting-time prediction platform**:
 
 ```mermaid
 graph TD
-    subgraph Client Tier [Presentation Tier - React.js]
-        Kiosk[Student / Kiosk View]
-        Teller[Teller Counter Interface]
-        Admin[Admin Dashboard]
+    subgraph ClientTier["Presentation Tier (React.js)"]
+        Kiosk["Student / Kiosk View"]
+        Teller["Teller Counter Interface"]
+        Admin["Admin Dashboard"]
     end
 
-    subgraph App Tier [Application Tier - Django & DRF]
-        API[Django REST Framework<br/>/api/tickets/, /api/counters/]
-        WS[Django Channels ASGI<br/>WebSocket Broadcasts]
+    subgraph AppTier["Application Tier (Django & DRF)"]
+        API["Django REST Framework<br/>/api/tickets/, /api/counters/"]
+        WS["Django Channels ASGI<br/>WebSocket Broadcasts"]
     end
 
-    subgraph ML Tier [In-Memory Prediction Engine]
-        Singleton[Predictor Singleton<br/>Startup Preloading]
-        MLModel[System A: ML Pipeline<br/>Random Forest / LightGBM]
-        Baseline[System B: Fallback Engine<br/>Average Service Time / QL]
+    subgraph MLTier["In-Memory Prediction Engine"]
+        Singleton["Predictor Singleton<br/>Startup Preloading"]
+        MLModel["System A: ML Pipeline<br/>Random Forest / LightGBM"]
+        Baseline["System B: Fallback Engine<br/>Average Service Time / QL"]
         Singleton --> MLModel
         Singleton --> Baseline
     end
 
-    subgraph Data Tier [Storage & Asynchronous Tasks]
-        DB[(PostgreSQL 15+<br/>Normalized Core + Snapshots)]
-        Redis[(Redis Channel Layer)]
-        Celery[Celery Async Workers]
+    subgraph DataTier["Storage & Tasks"]
+        DB[("PostgreSQL 15+<br/>Normalized Core + Snapshots")]
+        Redis[("Redis Channel Layer")]
+        Celery["Celery Async Workers"]
     end
 
-    Client Tier <-->|REST API| API
-    Client Tier <-->|WebSockets| WS
+    Kiosk <-->|"REST API"| API
+    Teller <-->|"REST API"| API
+    Admin <-->|"REST API"| API
+    Teller <-->|"WebSockets"| WS
+    Admin <-->|"WebSockets"| WS
+
     API --> Singleton
     API <--> DB
     WS <--> Redis

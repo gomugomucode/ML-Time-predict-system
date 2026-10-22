@@ -9,14 +9,14 @@ This document defines the formal **Work Breakdown Structure (WBS)**, resource ef
 To ensure a balanced, reliable system that avoids disproportionate investment in isolated layers, engineering capacity is divided equally across the four core disciplines:
 
 ```
-┌────────────────────────────────────────────────────────┐
-│  DATA ENGINEERING & PREPROCESSING (Phases 2 & 3)   │ 25% │
+┌──────────────────────────────────────────────────────────────┐
+│  DATA ENGINEERING & PREPROCESSING (Phases 2 & 3)   │ 25%     │
 ├────────────────────────────────────────────────────────┼─────┤
-│  MACHINE LEARNING & BENCHMARKING (Phases 1, 4 & 5) │ 25% │
+│  MACHINE LEARNING & BENCHMARKING (Phases 1, 4 & 5) │ 25%     │
 ├────────────────────────────────────────────────────────┼─────┤
-│  BACKEND & DATABASE INFRASTRUCTURE (Phases 6 & 7)  │ 25% │
+│  BACKEND & DATABASE INFRASTRUCTURE (Phases 6 & 7)  │ 25%     │
 ├────────────────────────────────────────────────────────┼─────┤
-│  FRONTEND, WEBSOCKETS & MLOPS (Phase 8)            │ 25% │
+│  FRONTEND, WEBSOCKETS & MLOPS (Phase 8)            │ 25%     │
 └────────────────────────────────────────────────────────┴─────┘
 ```
 
@@ -81,43 +81,43 @@ To ensure a balanced, reliable system that avoids disproportionate investment in
 
 ## 3. Work Package Dictionary & Task Details
 
-| WBS Code | Work Package / Task | Description | Estimated Effort | Deliverable | Pre-requisites |
-|---|---|---|---|---|---|
-| **1.1** | Target Formulation | Formalize $W_q = t_S - t_A$ in minutes; specify precision and range. | 4 hrs | Spec Doc | None |
-| **1.2** | SLA Definition | Define $\le 10$ ms latency limit and $\ge 15\%$ MAE improvement hurdle over AST. | 4 hrs | SLA Document | 1.1 |
-| **1.3** | Queueing Theory Math | Mathematical modeling of $M/M/1$ and $M/M/c$ pooling advantages; Little's Law. | 8 hrs | Research Doc 00 | None |
-| **2.1** | Raw Data Loading | Inspect `verified_queue_waiting_time_dataset.csv`, schema, and datatypes. | 6 hrs | EDA Notebook | None |
-| **2.2** | Duration Audit | Verify `wait_time` column against $(t_S - t_A)$; compute service duration $(t_D - t_S)$. | 6 hrs | Validation Report | 2.1 |
-| **2.3** | Anomaly Filtering | Drop negative wait times; apply IQR to isolate unrecorded server breaks. | 8 hrs | Cleaned Dataset | 2.2 |
-| **3.1** | Arrival-Time Features | Extract `queue_length`, `hour_of_day`, `day_of_week`, cyclical trigonometric sine/cosine. | 10 hrs | Feature Matrix | 2.3 |
-| **3.2** | Delay-History Features | Compute Last-To-Enter-Service (LES) and rolling 7-day Average Service Time (AST). | 12 hrs | Feature Matrix v2 | 3.1 |
-| **3.3** | Target Transformation | Apply log transformation $y = \ln(W_q + 1)$ and build inverse transformer. | 4 hrs | Transformed Target | 3.2 |
-| **3.4** | Chronological Split | Partition data into first 80% train and last 20% test chronologically. | 4 hrs | Train/Test Sets | 3.3 |
-| **4.1** | Statistical Baselines | Code Historical Mean and Last-to-Enter-Service (LES) prediction logic. | 8 hrs | Baseline Script | 3.4 |
-| **4.2** | Analytical Baselines | Code Average Service Time (AST) formula and Queue-Length ($\widehat{W}_{\text{QL}}$) formulas. | 8 hrs | Baseline Script | 4.1 |
-| **4.3** | Benchmark Evaluation | Compute MAE, RMSE, MAPE on test split across all baselines; set performance floor. | 6 hrs | Benchmark Report | 4.2 |
-| **4.4** | Fallback Packaging | Encapsulate AST formula into a standalone deterministic Python function. | 4 hrs | Fallback Module | 4.3 |
-| **5.1** | Pipeline Construction | Build Scikit-Learn `Pipeline` with `ColumnTransformer` preprocessing. | 8 hrs | Pipeline Code | 3.4, 4.3 |
-| **5.2** | Model Exploration | Train Linear Regression, Random Forest Regressor, and Gradient Boosting. | 14 hrs | Candidate Models | 5.1 |
-| **5.3** | Tuning & Cross-Val | Tune hyperparameters (`max_depth`, `n_estimators`) via `TimeSeriesSplit`. | 12 hrs | Tuned Models | 5.2 |
-| **5.4** | Interpretability | Calculate SHAP values and feature importances (validate queue length dominance). | 6 hrs | SHAP Analysis | 5.3 |
-| **5.5** | Serialization & Latency | Export to `wait_time_model.joblib`; verify single-item inference latency is $\le 10$ ms. | 6 hrs | Model Artifact | 5.3 |
-| **6.1** | Database Setup | Deploy PostgreSQL 15+ container/service and verify connectivity. | 6 hrs | Active DB Instance | None |
-| **6.2** | Schema Implementation | Write Django ORM models for Tickets, Counters, Services, Snapshots, and Logs. | 14 hrs | Django Models | 6.1, 1.1 |
-| **6.3** | Index Optimization | Create partial B-tree index on active waiting tickets (`status = 'waiting'`). | 6 hrs | Migration Scripts | 6.2 |
-| **6.4** | Facility Seeding | Populate baseline branch, services (Tuition, Clearance), and counters. | 4 hrs | Seed Script | 6.2 |
-| **7.1** | Django DRF Setup | Configure Django project, CORS headers, and REST Framework serializers. | 8 hrs | Base API Repo | 6.2 |
-| **7.2** | In-Memory Singleton | Implement `WaitTimePredictor` singleton; preload model in `AppConfig.ready()`. | 10 hrs | `ml_service.py` | 5.5, 7.1 |
-| **7.3** | Dual-Engine Routing | Wire prediction routing: try System A (ML) $\to$ except System B (AST baseline). | 8 hrs | Serving Logic | 7.2, 4.4 |
-| **7.4** | API Endpoints | Build `/api/tickets/` (creation + prediction) and `/api/counters/` endpoints. | 14 hrs | REST Endpoints | 7.3 |
-| **7.5** | WebSockets (Channels) | Set up Django Channels ASGI + Redis layer for `queue:updated` broadcasts. | 12 hrs | ASGI Consumer | 7.4 |
-| **8.1** | React Setup | Initialize React + Vite project with Tailwind/Vanilla CSS tokens. | 6 hrs | Frontend Repo | None |
-| **8.2** | Student Kiosk View | Build ticket issue screen, service selector, and digital token/QR view. | 14 hrs | Kiosk Page | 7.4, 8.1 |
-| **8.3** | Teller Counter View | Build staff call interface ("Call Next", "Serve", "Complete", queue count). | 14 hrs | Teller Dashboard | 7.4, 8.1 |
-| **8.4** | Hall Display Screen | Build full-screen public display showing currently called tokens and wait times. | 8 hrs | Display Screen | 7.5, 8.1 |
-| **8.5** | Admin Dashboard | Build operational graphs ($L_q, \rho, \lambda$) and live prediction accuracy audit. | 14 hrs | Admin Dashboard | 7.4, 8.1 |
-| **8.6** | WebSocket UI Sync | Connect React WebSocket hook to re-render queue states on live events. | 10 hrs | Live UI Sync | 7.5, 8.2-8.5 |
-| **8.7** | Celery & Retraining | Configure Celery worker for scheduled snapshot rollups and nightly accuracy audit. | 12 hrs | Async Worker | 7.4 |
+| WBS Code | Work Package / Task     | Description                                                                                    | Estimated Effort | Deliverable        | Pre-requisites |
+| -------- | ----------------------- | ---------------------------------------------------------------------------------------------- | ---------------- | ------------------ | -------------- |
+| **1.1**  | Target Formulation      | Formalize $W_q = t_S - t_A$ in minutes; specify precision and range.                           | 4 hrs            | Spec Doc           | None           |
+| **1.2**  | SLA Definition          | Define $\le 10$ ms latency limit and $\ge 15\%$ MAE improvement hurdle over AST.               | 4 hrs            | SLA Document       | 1.1            |
+| **1.3**  | Queueing Theory Math    | Mathematical modeling of $M/M/1$ and $M/M/c$ pooling advantages; Little's Law.                 | 8 hrs            | Research Doc 00    | None           |
+| **2.1**  | Raw Data Loading        | Inspect `verified_queue_waiting_time_dataset.csv`, schema, and datatypes.                      | 6 hrs            | EDA Notebook       | None           |
+| **2.2**  | Duration Audit          | Verify `wait_time` column against $(t_S - t_A)$; compute service duration $(t_D - t_S)$.       | 6 hrs            | Validation Report  | 2.1            |
+| **2.3**  | Anomaly Filtering       | Drop negative wait times; apply IQR to isolate unrecorded server breaks.                       | 8 hrs            | Cleaned Dataset    | 2.2            |
+| **3.1**  | Arrival-Time Features   | Extract `queue_length`, `hour_of_day`, `day_of_week`, cyclical trigonometric sine/cosine.      | 10 hrs           | Feature Matrix     | 2.3            |
+| **3.2**  | Delay-History Features  | Compute Last-To-Enter-Service (LES) and rolling 7-day Average Service Time (AST).              | 12 hrs           | Feature Matrix v2  | 3.1            |
+| **3.3**  | Target Transformation   | Apply log transformation $y = \ln(W_q + 1)$ and build inverse transformer.                     | 4 hrs            | Transformed Target | 3.2            |
+| **3.4**  | Chronological Split     | Partition data into first 80% train and last 20% test chronologically.                         | 4 hrs            | Train/Test Sets    | 3.3            |
+| **4.1**  | Statistical Baselines   | Code Historical Mean and Last-to-Enter-Service (LES) prediction logic.                         | 8 hrs            | Baseline Script    | 3.4            |
+| **4.2**  | Analytical Baselines    | Code Average Service Time (AST) formula and Queue-Length ($\widehat{W}_{\text{QL}}$) formulas. | 8 hrs            | Baseline Script    | 4.1            |
+| **4.3**  | Benchmark Evaluation    | Compute MAE, RMSE, MAPE on test split across all baselines; set performance floor.             | 6 hrs            | Benchmark Report   | 4.2            |
+| **4.4**  | Fallback Packaging      | Encapsulate AST formula into a standalone deterministic Python function.                       | 4 hrs            | Fallback Module    | 4.3            |
+| **5.1**  | Pipeline Construction   | Build Scikit-Learn `Pipeline` with `ColumnTransformer` preprocessing.                          | 8 hrs            | Pipeline Code      | 3.4, 4.3       |
+| **5.2**  | Model Exploration       | Train Linear Regression, Random Forest Regressor, and Gradient Boosting.                       | 14 hrs           | Candidate Models   | 5.1            |
+| **5.3**  | Tuning & Cross-Val      | Tune hyperparameters (`max_depth`, `n_estimators`) via `TimeSeriesSplit`.                      | 12 hrs           | Tuned Models       | 5.2            |
+| **5.4**  | Interpretability        | Calculate SHAP values and feature importances (validate queue length dominance).               | 6 hrs            | SHAP Analysis      | 5.3            |
+| **5.5**  | Serialization & Latency | Export to `wait_time_model.joblib`; verify single-item inference latency is $\le 10$ ms.       | 6 hrs            | Model Artifact     | 5.3            |
+| **6.1**  | Database Setup          | Deploy PostgreSQL 15+ container/service and verify connectivity.                               | 6 hrs            | Active DB Instance | None           |
+| **6.2**  | Schema Implementation   | Write Django ORM models for Tickets, Counters, Services, Snapshots, and Logs.                  | 14 hrs           | Django Models      | 6.1, 1.1       |
+| **6.3**  | Index Optimization      | Create partial B-tree index on active waiting tickets (`status = 'waiting'`).                  | 6 hrs            | Migration Scripts  | 6.2            |
+| **6.4**  | Facility Seeding        | Populate baseline branch, services (Tuition, Clearance), and counters.                         | 4 hrs            | Seed Script        | 6.2            |
+| **7.1**  | Django DRF Setup        | Configure Django project, CORS headers, and REST Framework serializers.                        | 8 hrs            | Base API Repo      | 6.2            |
+| **7.2**  | In-Memory Singleton     | Implement `WaitTimePredictor` singleton; preload model in `AppConfig.ready()`.                 | 10 hrs           | `ml_service.py`    | 5.5, 7.1       |
+| **7.3**  | Dual-Engine Routing     | Wire prediction routing: try System A (ML) $\to$ except System B (AST baseline).               | 8 hrs            | Serving Logic      | 7.2, 4.4       |
+| **7.4**  | API Endpoints           | Build `/api/tickets/` (creation + prediction) and `/api/counters/` endpoints.                  | 14 hrs           | REST Endpoints     | 7.3            |
+| **7.5**  | WebSockets (Channels)   | Set up Django Channels ASGI + Redis layer for `queue:updated` broadcasts.                      | 12 hrs           | ASGI Consumer      | 7.4            |
+| **8.1**  | React Setup             | Initialize React + Vite project with Tailwind/Vanilla CSS tokens.                              | 6 hrs            | Frontend Repo      | None           |
+| **8.2**  | Student Kiosk View      | Build ticket issue screen, service selector, and digital token/QR view.                        | 14 hrs           | Kiosk Page         | 7.4, 8.1       |
+| **8.3**  | Teller Counter View     | Build staff call interface ("Call Next", "Serve", "Complete", queue count).                    | 14 hrs           | Teller Dashboard   | 7.4, 8.1       |
+| **8.4**  | Hall Display Screen     | Build full-screen public display showing currently called tokens and wait times.               | 8 hrs            | Display Screen     | 7.5, 8.1       |
+| **8.5**  | Admin Dashboard         | Build operational graphs ($L_q, \rho, \lambda$) and live prediction accuracy audit.            | 14 hrs           | Admin Dashboard    | 7.4, 8.1       |
+| **8.6**  | WebSocket UI Sync       | Connect React WebSocket hook to re-render queue states on live events.                         | 10 hrs           | Live UI Sync       | 7.5, 8.2-8.5   |
+| **8.7**  | Celery & Retraining     | Configure Celery worker for scheduled snapshot rollups and nightly accuracy audit.             | 12 hrs           | Async Worker       | 7.4            |
 
 ---
 
@@ -137,6 +137,7 @@ Ph 8:                                         [████████] (Milest
 ```
 
 ### Review Checkpoints & Quality Gates
+
 - **Gate 1 (End of Week 2):** Raw dataset cleaned and validated; zero negative wait times.
 - **Gate 2 (End of Week 4):** Leakage-free feature matrix generated with chronological train/test partitioning.
 - **Gate 3 (End of Week 6):** Baseline benchmarks calculated (MAE/RMSE for Mean, LES, AST); PostgreSQL schema deployed and indexed.
@@ -152,12 +153,13 @@ The critical path of the project runs through:
 $$\text{Phase 1} \longrightarrow \text{Phase 2} \longrightarrow \text{Phase 3} \longrightarrow \text{Phase 5} \longrightarrow \text{Phase 7} \longrightarrow \text{Phase 8}$$
 
 ### Key Bottlenecks and Buffer Strategies
+
 1. **The Feature Engineering Bottleneck (Weeks 3–4):**  
-   *Risk:* Complex delay-history aggregations slowing down progress.  
-   *Mitigation:* Baseline model creation (Phase 4) and PostgreSQL database setup (Phase 6) run concurrently in Weeks 5–6 so that ML tuning and backend modeling can begin immediately.
+   _Risk:_ Complex delay-history aggregations slowing down progress.  
+   _Mitigation:_ Baseline model creation (Phase 4) and PostgreSQL database setup (Phase 6) run concurrently in Weeks 5–6 so that ML tuning and backend modeling can begin immediately.
 2. **The ML Performance Gate (Week 8):**  
-   *Risk:* ML model fails to beat simple AST formula.  
-   *Mitigation:* The dual-engine architecture ensures the system is functional regardless: if ML models do not meet the 15% improvement threshold, the system immediately uses the verified AST formula as its active engine while refining features.
+   _Risk:_ ML model fails to beat simple AST formula.  
+   _Mitigation:_ The dual-engine architecture ensures the system is functional regardless: if ML models do not meet the 15% improvement threshold, the system immediately uses the verified AST formula as its active engine while refining features.
 3. **Inference Latency Spike (Week 10):**  
-   *Risk:* Live queries during ticket issuance exceeding 10 ms SLA.  
-   *Mitigation:* Preload model at application boot (`AppConfig.ready()`) and query pre-aggregated rolling metrics rather than performing expensive `COUNT(*)` or `AVG()` table scans during client requests.
+   _Risk:_ Live queries during ticket issuance exceeding 10 ms SLA.  
+   _Mitigation:_ Preload model at application boot (`AppConfig.ready()`) and query pre-aggregated rolling metrics rather than performing expensive `COUNT(*)` or `AVG()` table scans during client requests.

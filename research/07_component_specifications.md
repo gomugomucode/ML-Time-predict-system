@@ -10,7 +10,7 @@ The presentation layer delivers role-tailored user interfaces optimized for mini
 
 ```mermaid
 graph LR
-    subgraph Frontend Subsystems
+    subgraph FrontendSubsystems["Frontend Subsystems"]
         Kiosk[Student / Kiosk Portal<br/>- QR Check-in<br/>- Personal EWT & Position]
         Teller[Teller Counter View<br/>- Call / Next Ticket<br/>- Start / Complete Service]
         Admin[Admin Dashboard<br/>- L_q, W_q, Utilization<br/>- Real-time MAE/RMSE Audit]

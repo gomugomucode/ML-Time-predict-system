@@ -35,35 +35,41 @@ This project delivers an end-to-end **ML-Driven Queue Waiting-Time Prediction an
 
 ```mermaid
 graph TD
-    subgraph Client Tier [Presentation Tier - React.js]
-        Kiosk[Public / Student Kiosk<br/>Ticket Generation & QR]
-        Tracker[Mobile Ticket Tracker<br/>Live Queue & Countdown]
-        Teller[Teller Counter Screen<br/>Call, Serve, Complete]
-        Admin[Admin Dashboard<br/>Metrics & Accuracy Audit]
+    subgraph ClientTier["Presentation Tier (React.js)"]
+        Kiosk["Public / Student Kiosk<br/>Ticket Generation & QR"]
+        Tracker["Mobile Ticket Tracker<br/>Live Queue & Countdown"]
+        Teller["Teller Counter Screen<br/>Call, Serve, Complete"]
+        Admin["Admin Dashboard<br/>Metrics & Accuracy Audit"]
     end
 
-    subgraph App Tier [Application Tier - Django & DRF]
-        API[Django REST Framework<br/>/api/tickets/, /api/predict/]
-        WS[Django Channels ASGI<br/>WebSocket Broadcasts]
-        Auth[JWT Authentication & RBAC]
+    subgraph AppTier["Application Tier (Django & DRF)"]
+        API["Django REST Framework<br/>/api/tickets/, /api/predict/"]
+        WS["Django Channels ASGI<br/>WebSocket Broadcasts"]
+        Auth["JWT Authentication & RBAC"]
     end
 
-    subgraph ML Tier [In-Memory ML Inference Tier]
-        Singleton[Predictor Singleton<br/>Loaded at Startup]
-        EngineA[System A: ML Pipeline<br/>Random Forest / LightGBM]
-        EngineB[System B: Baseline Engine<br/>Average Service Time / QL]
+    subgraph MLTier["In-Memory ML Inference Tier"]
+        Singleton["Predictor Singleton<br/>Loaded at Startup"]
+        EngineA["System A: ML Pipeline<br/>Random Forest / LightGBM"]
+        EngineB["System B: Baseline Engine<br/>Average Service Time / QL"]
         Singleton --> EngineA
         Singleton --> EngineB
     end
 
-    subgraph Data Tier [Storage & Task Tier]
-        DB[(PostgreSQL 15+<br/>Normalized Core + Snapshots)]
-        Redis[(Redis<br/>Channel Layer & Cache)]
-        Celery[Celery Async Workers<br/>Snapshots & Retraining]
+    subgraph DataTier["Storage & Task Tier"]
+        DB[("PostgreSQL 15+<br/>Normalized Core + Snapshots")]
+        Redis[("Redis<br/>Channel Layer & Cache")]
+        Celery["Celery Async Workers<br/>Snapshots & Retraining"]
     end
 
-    Client Tier <-->|REST API| API
-    Client Tier <-->|WebSockets| WS
+    Kiosk <-->|"REST API"| API
+    Tracker <-->|"REST API"| API
+    Teller <-->|"REST API"| API
+    Admin <-->|"REST API"| API
+    Tracker <-->|"WebSockets"| WS
+    Teller <-->|"WebSockets"| WS
+    Admin <-->|"WebSockets"| WS
+
     API --> Singleton
     API <--> DB
     WS <--> Redis
