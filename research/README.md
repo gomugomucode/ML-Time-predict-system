@@ -8,6 +8,7 @@ Welcome to the research documentation repository for the **ML-Driven Queue Waiti
 
 | # | Topic | Document | Description |
 |---|---|---|---|
+| **00** | **Queuing Theory & M/M/1 Analysis** | [`00_queuing_theory_fundamentals_and_numerical_walkthrough.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/00_queuing_theory_fundamentals_and_numerical_walkthrough.md) | Little's Law ($L = \lambda W$), step-by-step numerical walkthrough, $M/M/1$ vs. $M/M/c$ pooling, non-linear wait reduction, and total operational cost optimization. |
 | **01** | **Features & Target Variables** | [`01_features_and_target_variables.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/01_features_and_target_variables.md) | Commonly used queue features, arrival-time availability constraints, target variable definitions ($W_q$, $W_s$), and calculation methodologies. |
 | **02** | **Baseline Models & Queueing Theory** | [`02_baseline_models_and_queueing_theory.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/02_baseline_models_and_queueing_theory.md) | Non-ML benchmarks, empirical rolling averages, Delay-History (LES, HOL), Queue-Length estimators, Average Service Time (AST), and classical queueing models. |
 | **03** | **Data Collection Protocol** | [`03_data_collection_protocol_college_queue.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/03_data_collection_protocol_college_queue.md) | Structured observational field study protocol for a college account section queue lacking historical logs, with Little's Law validation. |
@@ -16,6 +17,7 @@ Welcome to the research documentation repository for the **ML-Driven Queue Waiti
 | **06** | **Django ML Integration Guide** | [`06_django_ml_integration_guide.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/06_django_ml_integration_guide.md) | Low-latency ($\le 10$ ms) scikit-learn model serving in DRF using singleton in-memory caching, pipeline serialization, input validation, and dual-engine fallback. |
 | **07** | **Component Specifications** | [`07_component_specifications.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/07_component_specifications.md) | Detailed functional and technical requirements for Frontend, Backend, Database, and Machine Learning subsystems. |
 | **08** | **Implementation Roadmap & Gantt Schedule** | [`08_implementation_roadmap_and_schedule.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/08_implementation_roadmap_and_schedule.md) | 8-phase end-to-end CRISP-DM engineering roadmap, inter-phase dependency matrix, 12-week Gantt schedule, and risk mitigation strategies. |
+| **09** | **Project Kickoff & Tech Selection** | [`09_project_kickoff_and_technology_selection.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/09_project_kickoff_and_technology_selection.md) | Strategic decision framework: why start with Data/ML first, Python Django vs. Node.js evaluation, and immediate 4-step action plan. |
 
 ---
 
