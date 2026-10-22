@@ -25,7 +25,12 @@ for file in os.listdir(PATH):
         # print(f"Loaded CSV: {file} - Shape: {df.shape}")
 
 
-# print(dfs_list[0].columns)
+print(dfs_list[0].columns)
+
+print(dfs_list[1].columns)
+
+print(dfs_list[2].columns)
+
 
 # for i in range(len(dfs_list)):
 #     for col in dfs_list[i].columns:
