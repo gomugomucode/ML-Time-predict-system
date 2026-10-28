@@ -7,6 +7,8 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-10-28) - refactor: purge dead code, eliminate duplicate collections, and modularize load_queue_datasets in main.py
+d612d73 (2026-10-28) - docs: add codebase audit report and changelog for Phase 2 data ingestion
 dd3dae3 (2026-10-28) - feat: standardize columns, parse timestamps, and combine loaded CSV datasets
 b9fce5a (2026-10-25) - docs: add project task execution matrix and phase-by-phase tracker
 0fdf1c1 (2026-10-22) - docs: add docs directory with comprehensive audit, changelog, tasks, and plan
@@ -25,6 +27,34 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-10-28: Code Cleanup, Dead Code Removal & Modularization of `main.py`
+- **Type:** Refactor & Code Hygiene
+- **Author:** gomugomucode
+- **Problem Statement:**
+  1. Commented-out legacy code (e.g. unexecuted `.xlsx` parsing) cluttered `main.py`.
+  2. Duplicate in-memory storage: maintained both a dictionary (`dfs`) and a list (`dfs_list`) holding the exact same DataFrames twice.
+  3. Script ran imperatively at module level without reusable function encapsulation.
+- **Modifications:**
+  - `main.py`:
+    - Removed commented-out Excel loading block and obsolete debug code.
+    - Eliminated redundant `dfs_list`, deriving `combined_df` directly via `pd.concat(list(dfs.values()), ignore_index=True)`.
+    - Encapsulated logic into a reusable function `load_queue_datasets(data_path: str = PATH) -> tuple[dict[str, pd.DataFrame], pd.DataFrame]`.
+    - Added clean `if __name__ == "__main__":` entrypoint with dataset verification output.
+    - Maintained purposeful, descriptive comments documenting each transformation stage.
+
+---
+
+### [Commit d612d73] — 2026-10-28: Codebase Audit Report & Sprint Tracker Update for Phase 2
+- **Type:** Documentation & Project Tracking
+- **Author:** gomugomucode
+- **Modifications:**
+  - `docs/AUDIT.md`: Updated Section 4 to reflect standardized column names, complete datetime parsing, and unified dataset loading in `main.py`.
+  - `docs/CHANGELOG.md`: Added commit history entries for `dd3dae3`, `b9fce5a`, and `0fdf1c1`.
+  - `TASKS.md`: Marked Task 2.1 and Task 2.3 as completed `[x]`, shifting Sprint 1 focus to arrival-time feature engineering.
+  - `research/TASKS.md`: Marked T-1.2 and Task 2.3 as completed `[x]`.
+
+---
 
 ### [Commit dd3dae3] — 2026-10-28: CSV Column Standardization, Full Timestamp Parsing & Unified Dataset Loading
 - **Type:** Feature / Data Engineering & Hygiene

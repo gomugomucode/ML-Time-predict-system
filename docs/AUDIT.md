@@ -118,11 +118,12 @@ An in-depth empirical audit was conducted on all datasets in the `data/` directo
 ## 4. Code Execution & Script Audit (`main.py`)
 
 ### Current State of `main.py`:
-- Successfully iterates through `data/` and imports all CSV files into both a dictionary (`dfs`) and a list (`dfs_list`).
+- Encapsulated into a modular, reusable function `load_queue_datasets(data_path)` returning both a dataset dictionary (`dfs`) and a unified DataFrame (`full_df`).
+- Completely purged dead commented-out code (legacy Excel loading and commented print loops) and eliminated redundant duplicate data structures (`dfs_list`).
 - Standardizes column headers across disparate datasets: `arrival` $\rightarrow$ `arrival_time`, `start` $\rightarrow$ `start_time`, `end` $\rightarrow$ `finish_time`, `wait_min` $\rightarrow$ `wait_time`.
 - Converts all timestamp columns (`arrival_time`, `start_time`, `finish_time`) to native `pd.to_datetime` (handling custom `DD-MM-YYYY H.M` formatting in `queue_data.csv` and microsecond ISO formats).
 - Normalizes `date` extraction and adds source provenance (`source_file`).
-- Unifies all datasets post-loop into `full_df` containing 14,545 records and outputs an audit of missing values and schema datatypes.
+- Unifies all datasets post-loop into `full_df` containing 14,545 records and outputs an audit of missing values and schema datatypes under `if __name__ == "__main__":`.
 
 ### Immediate Recommendations for `main.py`:
 - Transition into Phase 3 (Feature Engineering):
