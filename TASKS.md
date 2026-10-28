@@ -6,9 +6,10 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ## 🚀 Immediate Next Steps (Sprint 1 Focus)
 
-1. [ ] **Task 2.1:** Build a Python data inspection and cleaning script for `data/verified_queue_waiting_time_dataset.csv`.
-2. [ ] **Task 3.1:** Extract arrival-time features (`queue_length`, `hour_of_day`, `day_of_week`, cyclical encodings) and compute $W_q$.
-3. [ ] **Task 4.1:** Compute baseline evaluation metrics (Historical Mean, LES, AST formula, QL estimator) to establish the minimum performance floor.
+1. [x] **Task 2.1:** Build a Python data inspection and cleaning script for `data/verified_queue_waiting_time_dataset.csv`. *(Completed in `main.py`)*
+2. [x] **Task 2.3:** Inspect secondary datasets (`data/queue_data.csv`, `data/wait_times.csv`) and combine into unified pipeline. *(Completed in `main.py`)*
+3. [ ] **Task 3.1:** Extract arrival-time features (`queue_length`, `hour_of_day`, `day_of_week`, cyclical encodings) and compute $W_q$.
+4. [ ] **Task 4.1:** Compute baseline evaluation metrics (Historical Mean, LES, AST formula, QL estimator) to establish the minimum performance floor.
 
 ---
 
@@ -23,11 +24,11 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ## Phase 2: Data Acquisition, Hygiene & Exploration
 
-- [ ] **Task 2.1 [P0]:** Develop Python script (`src/data/inspect_data.py` or Jupyter notebook) to inspect `data/verified_queue_waiting_time_dataset.csv`.
+- [x] **Task 2.1 [P0]:** Develop Python script (`main.py`) to inspect and harmonize queue datasets. *(Completed in `main.py`)*
   - Check missing values, nulls, and duplicate timestamps.
-  - Verify timestamp data types and date ranges (October 5 – 22, 2026).
+  - Verify timestamp data types and date ranges across all datasets.
 - [ ] **Task 2.2 [P0]:** Validate data consistency between recorded `wait_time` and computed difference $(t_S - t_A)$.
-- [ ] **Task 2.3 [P1]:** Inspect secondary datasets (`data/queue_data.csv`, `data/wait_times.csv`) for potential multi-counter or cross-validation use.
+- [x] **Task 2.3 [P1]:** Inspect and standardize secondary datasets (`data/queue_data.csv`, `data/wait_times.csv`) for potential multi-counter or cross-validation use. *(Completed in `main.py`)*
 - [ ] **Task 2.4 [P1]:** Apply anomaly filtering:
   - Drop invalid records where $t_S < t_A$ (negative wait times).
   - Apply Interquartile Range (IQR) filter to identify extreme outliers caused by system pauses or unrecorded lunch breaks.

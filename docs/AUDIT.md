@@ -119,14 +119,16 @@ An in-depth empirical audit was conducted on all datasets in the `data/` directo
 
 ### Current State of `main.py`:
 - Successfully iterates through `data/` and imports all CSV files into both a dictionary (`dfs`) and a list (`dfs_list`).
-- Correctly inspects and prints column structures of the three loaded dataframes.
-- Excel loading (`.xlsx`) is commented out to avoid requiring external optional dependencies (`openpyxl`).
+- Standardizes column headers across disparate datasets: `arrival` $\rightarrow$ `arrival_time`, `start` $\rightarrow$ `start_time`, `end` $\rightarrow$ `finish_time`, `wait_min` $\rightarrow$ `wait_time`.
+- Converts all timestamp columns (`arrival_time`, `start_time`, `finish_time`) to native `pd.to_datetime` (handling custom `DD-MM-YYYY H.M` formatting in `queue_data.csv` and microsecond ISO formats).
+- Normalizes `date` extraction and adds source provenance (`source_file`).
+- Unifies all datasets post-loop into `full_df` containing 14,545 records and outputs an audit of missing values and schema datatypes.
 
 ### Immediate Recommendations for `main.py`:
-- Upgrade `main.py` from a passive loading script to an active data validation and feature engineering pipeline:
-  1. Add automatic conversion of timestamp columns to `pd.to_datetime`.
-  2. Extract prediction-time features (`hour`, `dayofweek`, `is_weekend`).
-  3. Compute baseline errors (Historical Mean MAE) to establish the project's performance floor.
+- Transition into Phase 3 (Feature Engineering):
+  1. Extract prediction-time features (`hour_of_day`, `day_of_week`, `is_weekend`, cyclical sine/cosine encodings) strictly using information available at $t_A$.
+  2. Implement chronological train/test split (80/20, no random shuffle) to prevent temporal data leakage.
+  3. Compute baseline errors (Historical Mean MAE and analytical AST formula MAE) to establish the project's performance floor.
 
 ---
 

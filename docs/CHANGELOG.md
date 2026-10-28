@@ -7,6 +7,9 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+dd3dae3 (2026-10-28) - feat: standardize columns, parse timestamps, and combine loaded CSV datasets
+b9fce5a (2026-10-25) - docs: add project task execution matrix and phase-by-phase tracker
+0fdf1c1 (2026-10-22) - docs: add docs directory with comprehensive audit, changelog, tasks, and plan
 34d7210 (2026-10-22) - fix: resolve Mermaid diagram syntax errors across README, PLAN, and research docs
 e59966b (2026-10-22) - docs: update README with comprehensive overview, architecture, and codebase links
 94e7749 (2026-10-22) - feat: add project planning, task tracking, and queueing theory research documentation
@@ -22,6 +25,42 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Commit dd3dae3] — 2026-10-28: CSV Column Standardization, Full Timestamp Parsing & Unified Dataset Loading
+- **Type:** Feature / Data Engineering & Hygiene
+- **Author:** gomugomucode
+- **Problem Statement:** 
+  1. Datasets in `data/` used divergent schema names (`arrival` vs `arrival_time`, `start` vs `start_time`, `end` vs `finish_time`, `wait_min` vs `wait_time`).
+  2. Timestamps were stored as raw unparsed strings across mixed formats (`%d-%m-%Y %H.%M` in `queue_data.csv`, ISO strings with microseconds in `wait_times.csv`).
+  3. Concatenation logic in `main.py` was mistakenly placed inside the per-file loop, causing incomplete merging and missing datasets.
+- **Modifications:**
+  - `main.py`:
+    - Standardized column mapping across `queue_data.csv`, `verified_queue_waiting_time_dataset.csv`, and `wait_times.csv`.
+    - Added comprehensive datetime parsing across `arrival_time`, `start_time`, and `finish_time`.
+    - Added dataset provenance column (`source_file`) and uniform `date` derivation (`arrival_time.dt.date`).
+    - Moved `pd.concat(dfs_list, ignore_index=True)` after the loading loop to unify all 14,545 records.
+    - Added structured diagnostics: total dataset shape, data types, missing value audit, and sample preview.
+
+---
+
+### [Commit b9fce5a] — 2026-10-25: Task Execution Matrix & Phase-by-Phase Tracker
+- **Type:** Documentation Enhancement
+- **Author:** gomugomucode
+- **Modifications:**
+  - `TASKS.md`: Added project execution tracker detailing priorities (`P0`, `P1`, `P2`), Sprint 1 immediate focus, and delivery checkboxes across all 8 phases.
+
+---
+
+### [Commit 0fdf1c1] — 2026-10-22: Docs Portal, Codebase Audit & Master Plan
+- **Type:** Documentation Architecture
+- **Author:** gomugomucode
+- **Modifications:**
+  - `docs/AUDIT.md`: Created comprehensive technical audit of datasets, theoretical queue compliance, and SLAs.
+  - `docs/CHANGELOG.md`: Established chronological commit history and detailed release log.
+  - `docs/PLAN.md`: Strategic implementation architecture and SLA definitions.
+  - `docs/README.md`: Navigation index for central documentation repository.
+
+---
 
 ### [Commit 34d7210] — 2026-10-22: Mermaid Diagram Syntax & Parser Fix
 - **Type:** Bug Fix / Documentation Quality

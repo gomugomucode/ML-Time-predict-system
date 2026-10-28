@@ -11,7 +11,7 @@
 | Task ID | Task Description | Priority | Status | Owner | Output / Deliverable |
 |---|---|---|---|---|---|
 | **T-1.1** | Load and inspect `verified_queue_waiting_time_dataset.csv` | `P0` | `[x]` | Data Eng | `main.py` verified; columns inspected. |
-| **T-1.2** | Parse `arrival_time`, `start_time`, `finish_time` as ISO datetimes | `P0` | `[ ]` | Data Eng | Timestamp conversion in Python. |
+| **T-1.2** | Parse `arrival_time`, `start_time`, `finish_time` as ISO datetimes | `P0` | `[x]` | Data Eng | Timestamp conversion across all datasets in `main.py`. |
 | **T-1.3** | Verify wait time consistency: $(t_S - t_A)$ vs. recorded `wait_time` | `P0` | `[x]` | Data Eng | Max difference $\le 0.02$ min verified in audit. |
 | **T-1.4** | Extract arrival-time features (`queue_length`, `hour`, `dayofweek`, `is_weekend`) | `P0` | `[ ]` | ML Eng | Feature matrix without leakage. |
 | **T-1.5** | Compute Non-ML Baselines (Historical Mean MAE & AST formula MAE) | `P0` | `[ ]` | ML Eng | Baseline error benchmark report. |
@@ -32,7 +32,7 @@
 ### Phase 2: Data Acquisition, Hygiene & Exploration
 - [x] **Task 2.1 [P0]:** Acquire and stage queue dataset in `data/` directory. *(Completed: 12,017 records)*
 - [x] **Task 2.2 [P0]:** Script initial dataset loading in `main.py`. *(Completed)*
-- [ ] **Task 2.3 [P0]:** Implement datetime parsing and duration checks in Python.
+- [x] **Task 2.3 [P0]:** Implement datetime parsing and standardization in `main.py`. *(Completed across all 3 CSVs)*
 - [ ] **Task 2.4 [P1]:** Filter extreme anomalies using Interquartile Range (IQR) on service durations.
 - [ ] **Task 2.5 [P2]:** Generate exploratory data analysis (EDA) plots (histograms, scatter, arrival rate).
 
