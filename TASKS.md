@@ -8,7 +8,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 1. [x] **Task 2.1:** Build a Python data inspection and cleaning script for `data/verified_queue_waiting_time_dataset.csv`. *(Completed in `main.py`)*
 2. [x] **Task 2.3:** Inspect secondary datasets (`data/queue_data.csv`, `data/wait_times.csv`) and combine into unified pipeline. *(Completed in `main.py`)*
-3. [ ] **Task 3.1:** Extract arrival-time features (`queue_length`, `hour_of_day`, `day_of_week`, cyclical encodings) and compute $W_q$.
+3. [x] **Task 3.1:** Extract arrival-time features (`queue_length`, `hour_of_day`, `day_of_week`, `is_weekend`) and define $X, y$. *(Completed in `main.py`)*
 4. [ ] **Task 4.1:** Compute baseline evaluation metrics (Historical Mean, LES, AST formula, QL estimator) to establish the minimum performance floor.
 
 ---
@@ -41,12 +41,11 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ## Phase 3: Feature Engineering & Preprocessing Pipeline
 
-- [ ] **Task 3.1 [P0]:** Implement strict prediction-time feature extraction pipeline (strictly using data available at $t_A$):
-  - `queue_length`: Headcount waiting ahead at arrival.
-  - `hour_of_day`: Integer $9 \dots 17$.
-  - `day_of_week`: Integer $0 \dots 6$.
-  - `is_weekend`: Binary indicator.
-  - `sin_hour`, `cos_hour`: Cyclical trigonometric transformations.
+- [x] **Task 3.1 [P0]:** Implement strict prediction-time feature extraction pipeline (strictly using data available at $t_A$): *(Completed in `main.py`)*
+  - `queue_length`: Headcount waiting ahead at arrival (with 0-fill imputation for missing values).
+  - `hour_of_day`: Integer $0 \dots 23$ extracted from `arrival_time`.
+  - `day_of_week`: Integer $0 \dots 6$ extracted from `arrival_time`.
+  - `is_weekend`: Binary indicator ($1$ for Saturday/Sunday, $0$ otherwise).
 - [ ] **Task 3.2 [P0]:** Engineer delay-history (DH) metrics:
   - `last_to_enter_service_wait` (LES): The realized wait time of the most recent customer called to a counter prior to $t_A$.
   - `rolling_service_time_avg`: Rolling average service time over recent completions.

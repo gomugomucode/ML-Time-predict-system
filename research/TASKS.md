@@ -13,7 +13,7 @@
 | **T-1.1** | Load and inspect `verified_queue_waiting_time_dataset.csv` | `P0` | `[x]` | Data Eng | `main.py` verified; columns inspected. |
 | **T-1.2** | Parse `arrival_time`, `start_time`, `finish_time` as ISO datetimes | `P0` | `[x]` | Data Eng | Timestamp conversion across all datasets in `main.py`. |
 | **T-1.3** | Verify wait time consistency: $(t_S - t_A)$ vs. recorded `wait_time` | `P0` | `[x]` | Data Eng | Max difference $\le 0.02$ min verified in audit. |
-| **T-1.4** | Extract arrival-time features (`queue_length`, `hour`, `dayofweek`, `is_weekend`) | `P0` | `[ ]` | ML Eng | Feature matrix without leakage. |
+| **T-1.4** | Extract arrival-time features (`queue_length`, `hour`, `dayofweek`, `is_weekend`) | `P0` | `[x]` | ML Eng | Feature matrix X and target y extracted in `main.py`. |
 | **T-1.5** | Compute Non-ML Baselines (Historical Mean MAE & AST formula MAE) | `P0` | `[ ]` | ML Eng | Baseline error benchmark report. |
 | **T-1.6** | Partition data chronologically (80% train / 20% test, no shuffling) | `P0` | `[ ]` | ML Eng | Chronological train/test splits. |
 | **T-1.7** | Train prototype `RandomForestRegressor` and evaluate MAE vs. baseline | `P0` | `[ ]` | ML Eng | Model comparison table. |
@@ -37,7 +37,7 @@
 - [ ] **Task 2.5 [P2]:** Generate exploratory data analysis (EDA) plots (histograms, scatter, arrival rate).
 
 ### Phase 3: Feature Engineering & Preprocessing Pipeline
-- [ ] **Task 3.1 [P0]:** Extract arrival features available at $t_A$ (`queue_length`, `hour`, `dayofweek`, `is_weekend`).
+- [x] **Task 3.1 [P0]:** Extract arrival features available at $t_A$ (`queue_length`, `hour`, `dayofweek`, `is_weekend`) in `main.py`.
 - [ ] **Task 3.2 [P1]:** Compute Delay-History (DH) metrics (Last-To-Enter-Service wait time).
 - [ ] **Task 3.3 [P1]:** Apply target log-transformation $y = \ln(W_q + 1)$ for skewed wait times.
 - [ ] **Task 3.4 [P0]:** Enforce chronological train-test split (80% train / 20% test).

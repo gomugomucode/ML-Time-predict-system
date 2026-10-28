@@ -7,7 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
-PENDING (2026-10-28) - refactor: purge dead code, eliminate duplicate collections, and modularize load_queue_datasets in main.py
+PENDING (2026-10-28) - feat: implement arrival feature extraction (X, y) and resolve markdown line continuation syntax in main.py
 d612d73 (2026-10-28) - docs: add codebase audit report and changelog for Phase 2 data ingestion
 dd3dae3 (2026-10-28) - feat: standardize columns, parse timestamps, and combine loaded CSV datasets
 b9fce5a (2026-10-25) - docs: add project task execution matrix and phase-by-phase tracker
@@ -28,7 +28,23 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
-### [Prompt Work / Working Tree] — 2026-10-28: Code Cleanup, Dead Code Removal & Modularization of `main.py`
+### [Prompt Work / Working Tree] — 2026-10-28: Feature Extraction Pipeline, Data Leakage Prevention & Syntax Resolution in `main.py`
+- **Type:** Feature & Bug Fix / Data Engineering & Modeling Prep
+- **Author:** gomugomucode
+- **Problem Statement:**
+  1. Markdown escaped text (`\#`, `\_`) accidentally pasted into `main.py` triggered `SyntaxError: unexpected character after line continuation character`.
+  2. Feature extraction logic was placed outside and above `if __name__ == "__main__":` before `full_df` was defined, leading to premature execution and potential `NameError`.
+  3. `queue_length` had missing values in secondary datasets (`wait_times.csv`) requiring safe zero-imputation prior to training.
+- **Modifications:**
+  - `main.py`:
+    - Created `extract_arrival_features(df)` to isolate arrival-time features (`queue_length`, `hour_of_day`, `day_of_week`, `is_weekend`) strictly available at $t_A$, eliminating temporal data leakage.
+    - Implemented safe zero-fill imputation for `queue_length` missing values (e.g. from `wait_times.csv`).
+    - Fixed line formatting and defined input feature matrix $X \in \mathbb{R}^{14545 \times 4}$ and continuous target vector $y = \text{wait\_time}$.
+    - Added structured console reporting verifying shapes, absence of nulls, and head previews.
+
+---
+
+### [Refactor Summary] — 2026-10-28: Code Cleanup, Dead Code Removal & Modularization of `main.py`
 - **Type:** Refactor & Code Hygiene
 - **Author:** gomugomucode
 - **Problem Statement:**
