@@ -108,6 +108,14 @@ def extract_arrival_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+    # now let train and evaluate the model
+
+    # 80% training  20 % testing
+
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
 
 if __name__ == "__main__":
     dfs, raw_df = load_queue_datasets(PATH)
