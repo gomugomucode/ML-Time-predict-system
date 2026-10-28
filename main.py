@@ -1,5 +1,9 @@
 import os
+import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 PATH = "data"
 
@@ -108,23 +112,58 @@ def extract_arrival_features(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-    # now let train and evaluate the model
 
-    # 80% training  20 % testing
-
-    X_train, X_test, Y_train, Y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+def train_and_evaluate_model(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple[RandomForestRegressor, dict[str, float]]:
+    """
+    Train and evaluate a RandomForestRegressor model on queue waiting-time features.
+    Computes MAE, RMSE, R2, and benchmarks against a naive Historical Mean baseline.
+    """
+    # 80% training / 20% testing split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
     )
+
+    # Train the Random Forest Regressor
+    model = RandomForestRegressor(n_estimators=100, random_state=random_state)
+    model.fit(X_train, y_train)
+
+    # Predictions on the test set
+    y_pred = model.predict(X_test)
+
+    # Calculate evaluation metrics
+    mae = float(mean_absolute_error(y_test, y_pred))
+    rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
+    r2 = float(r2_score(y_test, y_pred))
+
+    # Baseline comparison: Historical Mean
+    baseline_pred = np.full_like(y_test, fill_value=y_train.mean())
+    baseline_mae = float(mean_absolute_error(y_test, baseline_pred))
+    improvement = ((baseline_mae - mae) / baseline_mae) * 100
+
+    metrics = {
+        "mae": mae,
+        "rmse": rmse,
+        "r2": r2,
+        "baseline_mae": baseline_mae,
+        "improvement_pct": improvement,
+    }
+
+    return model, metrics
 
 
 if __name__ == "__main__":
     dfs, raw_df = load_queue_datasets(PATH)
 
     if not raw_df.empty:
-        # Extract prediction-time features
+        # 1. Extract prediction-time features
         full_df = extract_arrival_features(raw_df)
 
-        # Define X (Inputs) and y (Target)
+        # 2. Define X (Inputs) and y (Target)
         features = ["queue_length", "hour_of_day", "day_of_week", "is_weekend"]
         target = "wait_time"
 
@@ -139,9 +178,18 @@ if __name__ == "__main__":
         print(f"Target Variable:   '{target}'")
         print("\nMissing Values in Features (X):")
         print(X.isnull().sum())
-        print("\nSample Preview of Features (X.head(5)):")
-        print(X.head(5))
-        print("\nSample Preview of Target (y.head(5)):")
-        print(y.head(5))
+
+        # 3. Train and evaluate the model
+        print("\n" + "=" * 60)
+        print("Training RandomForestRegressor (100 estimators, 80/20 split)...")
+        print("=" * 60)
+        model, metrics = train_and_evaluate_model(X, y)
+
+        print("Model Training & Evaluation Complete:")
+        print(f"  - Mean Absolute Error (MAE):     {metrics['mae']:.2f} minutes")
+        print(f"  - Root Mean Squared Error (RMSE): {metrics['rmse']:.2f} minutes")
+        print(f"  - Coefficient of Determination (R2): {metrics['r2']:.4f}")
+        print(f"  - Naive Baseline MAE (Mean):     {metrics['baseline_mae']:.2f} minutes")
+        print(f"  - Accuracy Improvement:          {metrics['improvement_pct']:.2f}% over baseline")
     else:
         print("No CSV files found in the data directory.")

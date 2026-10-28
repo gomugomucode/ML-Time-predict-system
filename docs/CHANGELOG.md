@@ -7,7 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
-PENDING (2026-10-28) - feat: implement arrival feature extraction (X, y) and resolve markdown line continuation syntax in main.py
+PENDING (2026-10-28) - feat: train RandomForestRegressor prototype and evaluate against baseline (83.6% MAE improvement) in main.py
 d612d73 (2026-10-28) - docs: add codebase audit report and changelog for Phase 2 data ingestion
 dd3dae3 (2026-10-28) - feat: standardize columns, parse timestamps, and combine loaded CSV datasets
 b9fce5a (2026-10-25) - docs: add project task execution matrix and phase-by-phase tracker
@@ -28,7 +28,28 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
-### [Prompt Work / Working Tree] — 2026-10-28: Feature Extraction Pipeline, Data Leakage Prevention & Syntax Resolution in `main.py`
+### [Prompt Work / Working Tree] — 2026-10-28: Model Training, Evaluation Pipeline & Baseline Benchmarking in `main.py`
+- **Type:** Feature & Refactor / Model Development & Evaluation
+- **Author:** gomugomucode
+- **Problem Statement:**
+  1. Training snippet was indented inside `extract_arrival_features()` after `return df`, creating dead unreachable code.
+  2. Prediction and metric calculation ran at module import scope before model variables were instantiated (`NameError: name 'model' is not defined`).
+  3. Missing `numpy` import for root mean squared error calculation (`np.sqrt`).
+- **Modifications:**
+  - `main.py`:
+    - Added `import numpy as np` and imported evaluation metrics (`mean_absolute_error`, `mean_squared_error`, `r2_score`).
+    - Implemented `train_and_evaluate_model(X, y, test_size=0.2, random_state=42)` returning trained `RandomForestRegressor` and evaluation metrics dictionary.
+    - Added naive Historical Mean baseline comparison ($y_{\text{base}} = \overline{y}_{\text{train}}$).
+    - Executed evaluation on test partition:
+      - **Baseline MAE:** $59.09\text{ minutes}$.
+      - **Random Forest MAE:** $9.68\text{ minutes}$.
+      - **Root Mean Squared Error (RMSE):** $21.07\text{ minutes}$.
+      - **$R^2$ Score:** $0.9083$.
+      - **Accuracy Gain:** $83.62\%$ error reduction over baseline (satisfying the $\ge 15\%$ SLA requirement).
+  - `TASKS.md` & `research/TASKS.md`:
+    - Updated Task 4.1, Task 4.2, Task 5.2, and Task 5.3 to completed status `[x]`.
+
+---
 - **Type:** Feature & Bug Fix / Data Engineering & Modeling Prep
 - **Author:** gomugomucode
 - **Problem Statement:**

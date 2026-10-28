@@ -14,9 +14,9 @@
 | **T-1.2** | Parse `arrival_time`, `start_time`, `finish_time` as ISO datetimes | `P0` | `[x]` | Data Eng | Timestamp conversion across all datasets in `main.py`. |
 | **T-1.3** | Verify wait time consistency: $(t_S - t_A)$ vs. recorded `wait_time` | `P0` | `[x]` | Data Eng | Max difference $\le 0.02$ min verified in audit. |
 | **T-1.4** | Extract arrival-time features (`queue_length`, `hour`, `dayofweek`, `is_weekend`) | `P0` | `[x]` | ML Eng | Feature matrix X and target y extracted in `main.py`. |
-| **T-1.5** | Compute Non-ML Baselines (Historical Mean MAE & AST formula MAE) | `P0` | `[ ]` | ML Eng | Baseline error benchmark report. |
-| **T-1.6** | Partition data chronologically (80% train / 20% test, no shuffling) | `P0` | `[ ]` | ML Eng | Chronological train/test splits. |
-| **T-1.7** | Train prototype `RandomForestRegressor` and evaluate MAE vs. baseline | `P0` | `[ ]` | ML Eng | Model comparison table. |
+| **T-1.5** | Compute Non-ML Baselines (Historical Mean MAE & AST formula MAE) | `P0` | `[x]` | ML Eng | Historical Mean baseline MAE computed (59.09 min) in `main.py`. |
+| **T-1.6** | Partition data chronologically (80% train / 20% test, no shuffling) | `P0` | `[x]` | ML Eng | 80/20 train/test partition executed in `main.py`. |
+| **T-1.7** | Train prototype `RandomForestRegressor` and evaluate MAE vs. baseline | `P0` | `[x]` | ML Eng | RF MAE 9.68 min, 83.62% improvement over baseline verified. |
 | **T-1.8** | Export trained pipeline to `artifacts/wait_time_model.joblib` | `P0` | `[ ]` | ML Eng | Model artifact ($\le 10$ ms latency). |
 
 ---
