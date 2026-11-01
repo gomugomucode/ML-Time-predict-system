@@ -63,7 +63,7 @@
 - [ ] **Task 6.4 [P1]:** Seed initial facility layout (Branches, Counters, Services, Staff accounts).
 
 ### Phase 7: Backend Serving, Django REST API & Dual-Engine Fallback
-- [ ] **Task 7.1 [P0]:** Initialize Django REST Framework project (`queue_backend`).
+- [x] **Task 7.1 [P0]:** Initialize Django REST Framework project (`queue_backend`) and `api` application with CORS.
 - [ ] **Task 7.2 [P0]:** Implement in-memory singleton predictor (`ml_service.py`) preloaded at boot (`AppConfig.ready()`).
 - [ ] **Task 7.3 [P0]:** Implement dual-engine routing: primary ML with automatic AST baseline fallback.
 - [ ] **Task 7.4 [P0]:** Develop REST endpoints: `POST /api/tickets/`, `PATCH /api/tickets/{id}/status/`, `GET /api/counters/{id}/queue/`.

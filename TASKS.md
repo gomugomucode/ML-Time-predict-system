@@ -117,9 +117,10 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ## Phase 7: Backend Serving, API Orchestration & Dual-Engine Fallback
 
-- [ ] **Task 7.1 [P0]:** Initialize Django REST Framework project structure:
+- [x] **Task 7.1 [P0]:** Initialize Django REST Framework project structure: *(Completed)*
   - Set up `queue_backend` Django project and `api` application.
-  - Configure CORS, REST Framework settings, and JWT authentication.
+  - Installed and verified `django`, `djangorestframework`, and `django-cors-headers`.
+  - Configured `rest_framework`, `corsheaders`, and `api` in `INSTALLED_APPS` with CORS middleware.
 - [ ] **Task 7.2 [P0]:** Implement in-memory ML model singleton service (`ml_service.py`):
   - Preload `.joblib` model at server startup inside `AppConfig.ready()`.
   - Wrap inference in thread-safe prediction method.
