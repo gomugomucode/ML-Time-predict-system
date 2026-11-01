@@ -46,7 +46,7 @@
 - [ ] **Task 4.1 [P0]:** Compute Naïve Historical Mean predictor on test split.
 - [ ] **Task 4.2 [P0]:** Implement Last-to-Enter-Service (LES) and Average Service Time (AST) formulas.
 - [ ] **Task 4.3 [P0]:** Calculate MAE, RMSE, MAPE to establish minimum performance floor.
-- [ ] **Task 4.4 [P1]:** Package AST formula as standalone Python fallback function.
+- [x] **Task 4.4 [P1]:** Package AST formula as standalone Python fallback function. *(Completed in `queue_backend/api/ml_service.py`)*
 
 ### Phase 5: Machine Learning Model Development & Optimization
 - [ ] **Task 5.1 [P0]:** Construct Scikit-Learn `Pipeline` with preprocessing transformers.
@@ -64,8 +64,8 @@
 
 ### Phase 7: Backend Serving, Django REST API & Dual-Engine Fallback
 - [x] **Task 7.1 [P0]:** Initialize Django REST Framework project (`queue_backend`) and `api` application with CORS.
-- [ ] **Task 7.2 [P0]:** Implement in-memory singleton predictor (`ml_service.py`) preloaded at boot (`AppConfig.ready()`).
-- [ ] **Task 7.3 [P0]:** Implement dual-engine routing: primary ML with automatic AST baseline fallback.
+- [x] **Task 7.2 [P0]:** Implement in-memory singleton predictor (`ml_service.py`) preloaded at boot (`AppConfig.ready()`).
+- [x] **Task 7.3 [P0]:** Implement dual-engine routing: primary ML with automatic AST baseline fallback.
 - [ ] **Task 7.4 [P0]:** Develop REST endpoints: `POST /api/tickets/`, `PATCH /api/tickets/{id}/status/`, `GET /api/counters/{id}/queue/`.
 - [ ] **Task 7.5 [P1]:** Configure Django Channels ASGI + Redis for live `queue:updated` WebSocket broadcasts.
 

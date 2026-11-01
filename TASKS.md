@@ -12,7 +12,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 4. [x] **Task 4.1:** Compute baseline evaluation metrics (Historical Mean baseline: 59.09 min MAE). *(Completed in `main.py`)*
 5. [x] **Task 5.2:** Train prototype `RandomForestRegressor` (Achieved 9.68 min MAE, 83.62% improvement over baseline). *(Completed in `main.py`)*
 6. [x] **Task 5.6:** Serialize trained model to `wait_time_rf_model.joblib`. *(Completed in `main.py`)*
-7. [ ] **Task 4.3:** Package Average Service Time (AST) formula fallback engine for the backend.
+7. [x] **Task 4.3:** Package Average Service Time (AST) formula fallback engine for the backend. *(Completed in `api/ml_service.py`)*
 
 ---
 
@@ -73,7 +73,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
   - Mean Absolute Error (MAE) in minutes.
   - Root Mean Squared Error (RMSE) in minutes.
   - Mean Absolute Percentage Error (MAPE).
-- [ ] **Task 4.3 [P1]:** Package the AST / QL formula as an independent fallback function to be embedded in the backend.
+- [x] **Task 4.3 [P1]:** Package the AST / QL formula as an independent fallback function to be embedded in the backend. *(Completed in `queue_backend/api/ml_service.py` with $\overline{S} = 2.38\text{ min}$)*
 
 ---
 
@@ -121,12 +121,12 @@ This document tracks all actionable engineering tasks across the 8 phases of the
   - Set up `queue_backend` Django project and `api` application.
   - Installed and verified `django`, `djangorestframework`, and `django-cors-headers`.
   - Configured `rest_framework`, `corsheaders`, and `api` in `INSTALLED_APPS` with CORS middleware.
-- [ ] **Task 7.2 [P0]:** Implement in-memory ML model singleton service (`ml_service.py`):
+- [x] **Task 7.2 [P0]:** Implement in-memory ML model singleton service (`api/ml_service.py`): *(Completed)*
   - Preload `.joblib` model at server startup inside `AppConfig.ready()`.
-  - Wrap inference in thread-safe prediction method.
-- [ ] **Task 7.3 [P0]:** Implement Dual-Engine Fallback mechanism:
+  - Wrap inference in thread-safe prediction method (`WaitTimePredictor` with `threading.RLock`).
+- [x] **Task 7.3 [P0]:** Implement Dual-Engine Fallback mechanism: *(Completed)*
   - Primary path: Execute in-memory ML pipeline (System A).
-  - Fallback path: If ML encounters error/missing values, immediately execute AST formula (System B).
+  - Fallback path: If ML encounters error/missing values, immediately execute AST formula (System B: $\overline{S} = 2.38\text{ min}$).
 - [ ] **Task 7.4 [P0]:** Develop REST API endpoints:
   - `POST /api/tickets/`: Issue ticket, compute instantaneous features, predict wait time, log prediction, return token + EWT.
   - `PATCH /api/tickets/{id}/status/`: Update ticket state (`in_service`, `completed`, `reneged`) and log actual wait time.

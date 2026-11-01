@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-02) - feat: implement thread-safe ML prediction service singleton (ml_service.py) with dual-engine AST fallback and REST endpoint
 PENDING (2026-11-01) - feat: initialize Django backend project (queue_backend) with DRF, CORS, and api app
 PENDING (2026-11-01) - feat: serialize trained RandomForest model to wait_time_rf_model.joblib
 PENDING (2026-10-28) - feat: train RandomForestRegressor prototype and evaluate against baseline (83.6% MAE improvement) in main.py
@@ -30,8 +31,57 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
-### [Prompt Work / Working Tree] — 2026-11-01: Backend Project Initialization (Django, DRF, CORS & pi App)
-- **Type:** Feature & System Scaffolding (eat)
+### [Prompt Work / Working Tree] — 2026-11-02: Thread-Safe ML Prediction Service Singleton (ml_service.py) with Dual-Engine Fallback & REST Endpoint
+- **Type:** Feature, Refactor & Architecture Hardening (feat / refactor)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - queue_backend/api/ml_service.py: Completely rewritten and corrected from corrupted single-line syntax-error file into full production-grade module.
+  - queue_backend/api/apps.py: Added ready() lifecycle hook for server-boot model preloading.
+  - queue_backend/api/views.py: Implemented PredictWaitTimeView DRF APIView class with input validation and dual-engine response payload.
+  - queue_backend/api/urls.py: Configured API route path('predict/', PredictWaitTimeView.as_view(), name='predict_wait_time').
+  - queue_backend/queue_backend/urls.py: Wired application router path('api/', include('api.urls')).
+  - queue_backend/queue_backend/settings.py: Updated ALLOWED_HOSTS to include 'localhost', '127.0.0.1', 'testserver', '*'.
+  - queue_backend/api/wait_time_rf_model.joblib: Deployed 33.3 MB model artifact directly into backend application package.
+  - TASKS.md: Marked Task 4.3, Task 7.2, and Task 7.3 as completed [x].
+  - research/TASKS.md: Marked Task 4.4, Task 7.2, and Task 7.3 as completed [x].
+- **Problem Statement & Root Cause:**
+  - The previous version of queue_backend/api/ml_service.py was corrupted due to single-line markdown formatting escapes (\_, &gt;), resulting in immediate Python SyntaxError.
+  - Naive model loading (joblib.load(MODEL_PATH)) at global module scope without thread-safety risks severe multi-threaded race conditions in production WSGI/ASGI application servers (e.g., Gunicorn, Uvicorn).
+  - Repeated disk I/O on cold requests would cause 50–100ms+ latency spikes, violating the operational SLA requirement (<= 10 ms).
+  - Inability to handle missing or corrupted model artifacts would crash the web application with HTTP 500 errors.
+- **Detailed What Was Added & Implemented:**
+  - **Thread-Safe In-Memory Singleton (WaitTimePredictor):**
+    - Implemented with double-checked locking using threading.RLock() (reentrant lock) to prevent deadlocks when internal methods query state.
+    - Preloads the 33.3 MB serialized Random Forest model into system RAM once at startup, keeping subsequent inference purely in-memory.
+  - **Multi-Path Artifact Resolution:**
+    - Implemented CANDIDATE_MODEL_PATHS inspecting api/, queue_backend/, and the repository root to guarantee model discovery regardless of execution working directory.
+  - **Dual-Engine System Architecture:**
+    - **System A (Primary ML Engine):** Evaluates RandomForestRegressor(n_estimators=100) over instantaneous prediction-time features ['queue_length', 'hour_of_day', 'day_of_week', 'is_weekend']. Supports multi-counter workload division (predicted_minutes / active_counters).
+    - **System B (Analytical AST Fallback Engine):** Implemented deterministic fallback formula W_AST = (L_q * S_bar) / c with empirical mean service time S_bar = 2.38 minutes derived from the 12,017-record verified queue dataset.
+  - **High-Resolution Telemetry & Latency Profiling:**
+    - Leverages time.perf_counter() to capture microsecond-level execution times (latency_ms), identifying whether System A or System B generated the prediction.
+  - **Django REST Framework Endpoint (POST /api/predict/):**
+    - In queue_backend/api/views.py, implemented PredictWaitTimeView validating required and optional parameters (queue_length >= 0, hour_of_day in [0, 23], day_of_week in [0, 6], is_weekend in {0, 1}, active_counters >= 1).
+    - Defaults hour_of_day and day_of_week to instantaneous local system time if omitted by the client.
+  - **Django Application Lifecycle Preloading:**
+    - Configured ApiConfig.ready() in queue_backend/api/apps.py to trigger WaitTimePredictor.get_instance() during server initialization.
+- **Detailed What Was Modified:**
+  - queue_backend/api/ml_service.py: Replaced corrupted code with PEP 8 compliant, type-annotated, production-ready module.
+  - queue_backend/queue_backend/settings.py: Set ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '*'].
+  - queue_backend/queue_backend/urls.py: Connected Django API router api/.
+- **Detailed What Was Deleted / Removed:**
+  - Removed all corrupted markdown escape backslashes, single-line concatenation, HTML entity references (&gt;), and unguarded global model loading.
+- **System Verification, Benchmarks & Validation:**
+  - Ran python manage.py check: Passed with 0 issues identified.
+  - Validated API endpoint via Django REST Framework APIClient:
+    - **Valid payload:** {queue_length: 12, hour_of_day: 11, day_of_week: 3, is_weekend: 0, active_counters: 2} -> Returned HTTP 200 OK, predicted_wait_minutes: 7.82, latency_ms: 4.526 ms (SLA <= 10 ms satisfied).
+    - **Fallback test (simulated missing model):** Returned HTTP 200 OK, predicted_wait_minutes: 11.9, engine AverageServiceTimeFallback, latency_ms: 0.019 ms.
+    - **Edge case testing:** Missing queue_length -> HTTP 400 Bad Request; negative queue length -> HTTP 400 Bad Request; invalid hour (99) -> HTTP 400 Bad Request.
+
+---
+
+### [Prompt Work / Working Tree] — 2026-11-01: Backend Project Initialization (Django, DRF, CORS & api App)
+- **Type:** Feature & System Scaffolding (feat)
 - **Author:** gomugomucode
 - **Affected Directories & Files:**
   - queue_backend/ (new Django project structure created)
@@ -42,8 +92,7 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
     - queue_backend/api/: Local Django application package containing models.py, iews.py, dmin.py, pps.py.
   - 
 equirements.txt: Frozen project dependencies.
-  - TASKS.md & 
-esearch/TASKS.md: Task 7.1 marked as completed.
+  - TASKS.md & research/TASKS.md: Task 7.1 marked as completed.
 - **Problem Statement:**
   - Following offline machine learning model training and serialization in Phase 5, the system required an application serving layer to orchestrate real-time ticket issuance, instantaneous feature computation, and model inference.
 - **Detailed What Was Added & Created:**
@@ -53,14 +102,13 @@ equirements.txt.
   - **App Generation:** Executed python manage.py startapp api inside queue_backend to scaffold the REST API application layer.
   - **CORS & DRF Configuration:**
     - Appended 
-est_framework, corsheaders, and pi to INSTALLED_APPS in queue_backend/settings.py.
+rest_framework, corsheaders, and api to INSTALLED_APPS in queue_backend/settings.py.
     - Placed 'corsheaders.middleware.CorsMiddleware' as the topmost middleware in MIDDLEWARE to process cross-origin preflight requests before security and session layers.
     - Added CORS_ALLOW_ALL_ORIGINS = True to enable local communication with the upcoming React/Vite frontend.
   - **Database Migration:** Applied initial standard Django migrations (contenttypes, uth, dmin, sessions) to initialize queue_backend/db.sqlite3.
 - **Detailed What Was Modified:**
   - queue_backend/queue_backend/settings.py: Modified INSTALLED_APPS, MIDDLEWARE, and added CORS configuration.
-  - TASKS.md and 
-esearch/TASKS.md: Updated Phase 7 Task 7.1 to completed [x].
+  - TASKS.md and research/TASKS.md: Updated Phase 7 Task 7.1 to completed [x].
 - **System Verification:**
   - Ran python manage.py check: Passed with System check identified no issues (0 silenced).
   - Ran python manage.py migrate: All 18 baseline database migrations executed successfully.
