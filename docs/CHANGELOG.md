@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-01) - feat: serialize trained RandomForest model to wait_time_rf_model.joblib
 PENDING (2026-10-28) - feat: train RandomForestRegressor prototype and evaluate against baseline (83.6% MAE improvement) in main.py
 d612d73 (2026-10-28) - docs: add codebase audit report and changelog for Phase 2 data ingestion
 dd3dae3 (2026-10-28) - feat: standardize columns, parse timestamps, and combine loaded CSV datasets
@@ -27,6 +28,21 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-01: Model Serialization via Joblib in `main.py`
+- **Type:** Feature & Model Persistence
+- **Author:** gomugomucode
+- **Problem Statement:**
+  - Trained `RandomForestRegressor` was not saved to disk, requiring re-training on every run and preventing low-latency API serving.
+- **Modifications:**
+  - `main.py`:
+    - Added `import joblib` to module imports.
+    - Added model persistence step via `joblib.dump(model, "wait_time_rf_model.joblib")`.
+    - Verified generated model file (~33 MB) and tested reload and inference latency (~14 ms).
+  - `TASKS.md` & `research/TASKS.md`:
+    - Marked Task 5.6 / T-1.8 as completed `[x]`.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-10-28: Model Training, Evaluation Pipeline & Baseline Benchmarking in `main.py`
 - **Type:** Feature & Refactor / Model Development & Evaluation

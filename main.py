@@ -1,4 +1,5 @@
 import os
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -191,5 +192,10 @@ if __name__ == "__main__":
         print(f"  - Coefficient of Determination (R2): {metrics['r2']:.4f}")
         print(f"  - Naive Baseline MAE (Mean):     {metrics['baseline_mae']:.2f} minutes")
         print(f"  - Accuracy Improvement:          {metrics['improvement_pct']:.2f}% over baseline")
+
+        # 4. Save the model file
+        model_filename = "wait_time_rf_model.joblib"
+        joblib.dump(model, model_filename)
+        print(f"\nModel saved successfully as '{model_filename}'!")
     else:
         print("No CSV files found in the data directory.")

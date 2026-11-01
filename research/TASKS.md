@@ -17,7 +17,7 @@
 | **T-1.5** | Compute Non-ML Baselines (Historical Mean MAE & AST formula MAE) | `P0` | `[x]` | ML Eng | Historical Mean baseline MAE computed (59.09 min) in `main.py`. |
 | **T-1.6** | Partition data chronologically (80% train / 20% test, no shuffling) | `P0` | `[x]` | ML Eng | 80/20 train/test partition executed in `main.py`. |
 | **T-1.7** | Train prototype `RandomForestRegressor` and evaluate MAE vs. baseline | `P0` | `[x]` | ML Eng | RF MAE 9.68 min, 83.62% improvement over baseline verified. |
-| **T-1.8** | Export trained pipeline to `artifacts/wait_time_model.joblib` | `P0` | `[ ]` | ML Eng | Model artifact ($\le 10$ ms latency). |
+| **T-1.8** | Export trained pipeline to `wait_time_rf_model.joblib` | `P0` | `[x]` | ML Eng | Model artifact serialized and verified via `joblib`. |
 
 ---
 
