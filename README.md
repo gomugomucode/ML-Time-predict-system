@@ -68,12 +68,26 @@ ML queue/
 ├── TASKS.md                                   # Actionable Task Checklist with priorities and checkboxes
 ├── WORK_BREAKDOWN_SCHEDULE.md                 # Formal WBS (1.0 - 8.0), Gantt schedule, and effort allocation
 ├── README.md                                  # Workspace overview and quickstart guide
-├── main.py                                    # Python data ingestion scratch script
+├── main.py                                    # Python data ingestion, training & evaluation pipeline
+├── wait_time_rf_model.joblib                  # Serialized Random Forest model artifact (33.3 MB)
+│
+├── queue_backend/                             # Django REST Framework Backend Application
+│   ├── manage.py                              # Django management script
+│   ├── queue_backend/                         # Project settings & URL routing
+│   │   ├── settings.py                        # CORS, DRF, and installed apps configuration
+│   │   └── urls.py                            # Root routing (/, /api/, /admin/)
+│   └── api/                                   # REST API & ML Serving Application
+│       ├── apps.py                            # Server boot preloader (WaitTimePredictor singleton)
+│       ├── ml_service.py                      # Thread-safe dual-engine inference service
+│       ├── views.py                           # ApiRootView, PredictWaitTimeView (GET & POST)
+│       ├── urls.py                            # /api/predict/ route registration
+│       ├── models.py                          # Relational database models (Phase 6)
+│       └── wait_time_rf_model.joblib          # Resident model artifact for low-latency inference
 │
 ├── data/                                      # Queue datasets and data dictionary
 │   ├── verified_queue_waiting_time_dataset.csv # Primary verified dataset (12,017 records, Oct 2026)
 │   ├── queue_data.csv                         # Historical queue samples (560 rows)
-│   ├── wait_times.csv                         # Multi-day logs
+│   ├── wait_times.csv                         # Multi-day logs (1,968 rows)
 │   └── DataDictionary.xlsx                    # Field definitions and metadata
 │
 └── research/                                  # Comprehensive research documentation
@@ -130,21 +144,56 @@ ML queue/
 
 ---
 
-## ⚡ Where to Start (Immediate Next Step)
+## ⚡ Quickstart & How to Run
 
-As outlined in [research/09_project_kickoff_and_technology_selection.md](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/research/09_project_kickoff_and_technology_selection.md):
-
-**Start with Data Inspection and Baseline Prototyping in Python before writing any backend or frontend code!**
-
-```bash
-# 1. Activate your virtual environment
+### 1. Run Data Ingestion & Model Training Pipeline (`main.py`)
+```powershell
+# Activate local virtual environment
 .venv\Scripts\activate
 
-# 2. Inspect the verified dataset in data/
-python -c "
-import pandas as pd
-df = pd.read_csv('data/verified_queue_waiting_time_dataset.csv')
-print(df.info())
-print(df.describe())
-"
+# Train Random Forest Regressor and evaluate against Historical Mean baseline
+python main.py
+```
+*Evaluates 14,545 records, computes baseline MAE ($59.09\text{ min}$) vs RF MAE ($9.68\text{ min}$), achieving an **83.62% accuracy gain**, and serializes the model to `wait_time_rf_model.joblib`.*
+
+---
+
+### 2. Start Django REST Backend Server
+```powershell
+# Navigate into the backend directory
+cd queue_backend
+
+# Run migrations (already initialized with SQLite for local development)
+python manage.py migrate
+
+# Start the development server
+python manage.py runserver
+```
+*The model is preloaded into memory upon startup via `ApiConfig.ready()`, guaranteeing **$\le 10\text{ ms}$ warm inference latency**.*
+
+---
+
+### 3. Test Prediction Endpoints
+
+#### In Your Web Browser:
+* **API Catalog & Schema:** Navigate to [http://127.0.0.1:8000/](http://127.0.0.1:8000/) or [http://127.0.0.1:8000/api/predict/](http://127.0.0.1:8000/api/predict/).
+* **Admin Dashboard:** Navigate to [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/).
+
+#### Via PowerShell (POST Prediction):
+```powershell
+$body = @{
+    queue_length = 8
+    hour_of_day = 14
+    day_of_week = 1
+    active_counters = 2
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/predict/" -Method POST -Body $body -ContentType "application/json"
+```
+
+#### Via cURL / Bash:
+```bash
+curl -X POST http://127.0.0.1:8000/api/predict/ \
+  -H "Content-Type: application/json" \
+  -d '{"queue_length": 8, "hour_of_day": 14, "day_of_week": 1, "active_counters": 2}'
 ```

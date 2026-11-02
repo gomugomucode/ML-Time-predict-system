@@ -4,7 +4,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ---
 
-## 🚀 Immediate Next Steps (Sprint 1 Focus)
+## 🚀 Immediate Next Steps (Sprint 1 & 2 Focus)
 
 1. [x] **Task 2.1:** Build a Python data inspection and cleaning script for `data/verified_queue_waiting_time_dataset.csv`. *(Completed in `main.py`)*
 2. [x] **Task 2.3:** Inspect secondary datasets (`data/queue_data.csv`, `data/wait_times.csv`) and combine into unified pipeline. *(Completed in `main.py`)*
@@ -13,6 +13,11 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 5. [x] **Task 5.2:** Train prototype `RandomForestRegressor` (Achieved 9.68 min MAE, 83.62% improvement over baseline). *(Completed in `main.py`)*
 6. [x] **Task 5.6:** Serialize trained model to `wait_time_rf_model.joblib`. *(Completed in `main.py`)*
 7. [x] **Task 4.3:** Package Average Service Time (AST) formula fallback engine for the backend. *(Completed in `api/ml_service.py`)*
+8. [x] **Task 7.1:** Initialize Django REST Framework backend project (`queue_backend`) with DRF and CORS. *(Completed)*
+9. [x] **Task 7.2:** Implement thread-safe in-memory ML model singleton service (`WaitTimePredictor` with `threading.RLock`). *(Completed in `api/ml_service.py`)*
+10. [x] **Task 7.3:** Implement Dual-Engine Fallback mechanism with low-latency REST endpoints (`GET/POST /api/predict/`, `GET /`). *(Completed in `api/views.py`)*
+11. [ ] **Task 6.2:** Implement core Django ORM database models (`Service`, `Counter`, `Ticket`, `PredictionLog`) in `queue_backend/api/models.py`.
+12. [ ] **Task 7.4:** Develop ticket issuance and status transition REST endpoints (`POST /api/tickets/`, `PATCH /api/tickets/{id}/status/`).
 
 ---
 

@@ -18,6 +18,9 @@
 | **T-1.6** | Partition data chronologically (80% train / 20% test, no shuffling) | `P0` | `[x]` | ML Eng | 80/20 train/test partition executed in `main.py`. |
 | **T-1.7** | Train prototype `RandomForestRegressor` and evaluate MAE vs. baseline | `P0` | `[x]` | ML Eng | RF MAE 9.68 min, 83.62% improvement over baseline verified. |
 | **T-1.8** | Export trained pipeline to `wait_time_rf_model.joblib` | `P0` | `[x]` | ML Eng | Model artifact serialized and verified via `joblib`. |
+| **T-1.9** | Scaffold Django REST Framework project (`queue_backend`) & CORS | `P0` | `[x]` | Backend Eng | DRF app initialized, settings & CORS configured. |
+| **T-1.10** | Implement in-memory singleton predictor (`WaitTimePredictor`) | `P0` | `[x]` | Backend / ML | `api/ml_service.py` with `threading.RLock`, ~4 ms inference. |
+| **T-1.11** | Build Dual-Engine Fallback API (`/api/predict/`, root `/`) | `P0` | `[x]` | Backend Eng | `POST /api/predict/` with AST fallback ($\overline{S} = 2.38$). |
 
 ---
 

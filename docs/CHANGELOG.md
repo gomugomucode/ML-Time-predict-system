@@ -60,11 +60,14 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
     - **System B (Analytical AST Fallback Engine):** Implemented deterministic fallback formula W_AST = (L_q * S_bar) / c with empirical mean service time S_bar = 2.38 minutes derived from the 12,017-record verified queue dataset.
   - **High-Resolution Telemetry & Latency Profiling:**
     - Leverages time.perf_counter() to capture microsecond-level execution times (latency_ms), identifying whether System A or System B generated the prediction.
-  - **Django REST Framework Endpoint (POST /api/predict/):**
-    - In queue_backend/api/views.py, implemented PredictWaitTimeView validating required and optional parameters (queue_length >= 0, hour_of_day in [0, 23], day_of_week in [0, 6], is_weekend in {0, 1}, active_counters >= 1).
-    - Defaults hour_of_day and day_of_week to instantaneous local system time if omitted by the client.
+  - **Django REST Framework Endpoint (GET & POST /api/predict/):**
+    - In queue_backend/api/views.py, implemented ApiRootView and PredictWaitTimeView:
+      - GET / & GET /api/: Root landing and service directory endpoint. Eliminates 404 on base URL visits, returning live system status, engine readiness flag, endpoint catalog, and interactive quick-start curl instructions.
+      - PredictWaitTimeView:
+      - POST: Validates required and optional parameters (queue_length >= 0, hour_of_day in [0, 23], day_of_week in [0, 6], is_weekend in {0, 1}, active_counters >= 1). Defaults temporal features to instantaneous local system time if omitted.
+      - GET: Health, readiness, and schema discovery endpoint returning current engine status (ML vs Fallback), model artifact path, parameter requirements, and sample copy-pasteable request payload.
   - **Django Application Lifecycle Preloading:**
-    - Configured ApiConfig.ready() in queue_backend/api/apps.py to trigger WaitTimePredictor.get_instance() during server initialization.
+    - Configured ApiConfig.ready() in queue_backend/api/apps.py to trigger WaitTimePredictor.get_instance() during server initialization with sys.argv guard to eliminate double-loading in the outer watchdog process of Django runserver while ensuring preloading on all ASGI/WSGI production workers.
 - **Detailed What Was Modified:**
   - queue_backend/api/ml_service.py: Replaced corrupted code with PEP 8 compliant, type-annotated, production-ready module.
   - queue_backend/queue_backend/settings.py: Set ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver', '*'].

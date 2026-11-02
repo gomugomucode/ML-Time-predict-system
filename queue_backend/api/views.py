@@ -11,6 +11,38 @@ from rest_framework.views import APIView
 from .ml_service import WaitTimePredictor
 
 
+class ApiRootView(APIView):
+    """
+    GET / and GET /api/
+    Root API directory providing links to active services, endpoints, and docs.
+    """
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        predictor = WaitTimePredictor.get_instance()
+        return Response(
+            {
+                "service": "ML Queue Waiting-Time Prediction & Management System",
+                "version": "1.0.0",
+                "status": "online",
+                "ml_engine_ready": predictor.is_ready(),
+                "endpoints": {
+                    "predict_wait_time": request.build_absolute_uri("/api/predict/"),
+                    "admin_dashboard": request.build_absolute_uri("/admin/"),
+                },
+                "quick_test_instructions": {
+                    "method": "POST",
+                    "url": request.build_absolute_uri("/api/predict/"),
+                    "sample_body": {
+                        "queue_length": 8,
+                        "hour_of_day": 14,
+                        "active_counters": 2,
+                    },
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class PredictWaitTimeView(APIView):
     """
     POST /api/predict/
@@ -26,6 +58,43 @@ class PredictWaitTimeView(APIView):
         "active_counters": 1        # int (optional >= 1, defaults to 1)
     }
     """
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Health and schema discovery endpoint for GET /api/predict/
+        Returns current engine readiness, model artifact status, and payload schema.
+        """
+        predictor = WaitTimePredictor.get_instance()
+        is_ready = predictor.is_ready()
+        return Response(
+            {
+                "endpoint": "POST /api/predict/",
+                "service": "Queue Wait Time Prediction API",
+                "status": "ready" if is_ready else "fallback_mode",
+                "active_engine": (
+                    "RandomForestRegressor" if is_ready else "AverageServiceTimeFallback"
+                ),
+                "model_loaded": is_ready,
+                "model_path": str(predictor.model_path) if predictor.model_path else None,
+                "required_parameters": {
+                    "queue_length": "Non-negative integer (e.g. 8)"
+                },
+                "optional_parameters": {
+                    "hour_of_day": "Integer 0-23 (defaults to current system hour)",
+                    "day_of_week": "Integer 0-6 (0=Monday, 6=Sunday; defaults to today)",
+                    "is_weekend": "0 or 1 (automatically derived if omitted)",
+                    "active_counters": "Integer >= 1 (defaults to 1)"
+                },
+                "sample_request_payload": {
+                    "queue_length": 8,
+                    "hour_of_day": 14,
+                    "day_of_week": 1,
+                    "is_weekend": 0,
+                    "active_counters": 2,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         data = request.data
