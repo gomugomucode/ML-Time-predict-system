@@ -8,7 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .ml_service import WaitTimePredictor
+from ml_service import WaitTimePredictor
 
 
 class ApiRootView(APIView):
@@ -72,10 +72,14 @@ class PredictWaitTimeView(APIView):
                 "service": "Queue Wait Time Prediction API",
                 "status": "ready" if is_ready else "fallback_mode",
                 "active_engine": (
-                    "RandomForestRegressor" if is_ready else "AverageServiceTimeFallback"
+                    "RandomForestRegressor"
+                    if is_ready
+                    else "AverageServiceTimeFallback"
                 ),
                 "model_loaded": is_ready,
-                "model_path": str(predictor.model_path) if predictor.model_path else None,
+                "model_path": (
+                    str(predictor.model_path) if predictor.model_path else None
+                ),
                 "required_parameters": {
                     "queue_length": "Non-negative integer (e.g. 8)"
                 },
@@ -83,7 +87,7 @@ class PredictWaitTimeView(APIView):
                     "hour_of_day": "Integer 0-23 (defaults to current system hour)",
                     "day_of_week": "Integer 0-6 (0=Monday, 6=Sunday; defaults to today)",
                     "is_weekend": "0 or 1 (automatically derived if omitted)",
-                    "active_counters": "Integer >= 1 (defaults to 1)"
+                    "active_counters": "Integer >= 1 (defaults to 1)",
                 },
                 "sample_request_payload": {
                     "queue_length": 8,
@@ -135,7 +139,9 @@ class PredictWaitTimeView(APIView):
                 raise ValueError
         except (TypeError, ValueError):
             return Response(
-                {"error": "Field 'day_of_week' must be an integer between 0 and 6 (0=Monday, 6=Sunday)."},
+                {
+                    "error": "Field 'day_of_week' must be an integer between 0 and 6 (0=Monday, 6=Sunday)."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
