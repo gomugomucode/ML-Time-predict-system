@@ -31,6 +31,34 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
+### [Prompt Work / Working Tree] — 2026-11-09: HTTP Client Integration & Test Script (	est_api.py)
+- **Type:** Feature, Tooling & Dependency Addition (eat / 	ool)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - 
+equirements.txt: Added 
+equests==2.34.2 to frozen dependencies.
+  - queue_backend/test_api.py: Created an automated HTTP testing client script.
+- **Problem Statement & Motivation:**
+  - When testing the live API from external scripts or REPL terminals, attempts to use 
+equests failed due to missing package dependencies (ModuleNotFoundError: No module named 'requests').
+  - Pasting multi-line Python snippets directly into the interactive REPL (>>>) caused line-squashing and syntax errors.
+- **Detailed What Was Added & Implemented:**
+  - **Dependency Installation:** Installed 
+equests==2.34.2 along with its subdependencies (certifi, charset_normalizer, idna, urllib3) in the local virtual environment (.venv) and pinned in 
+equirements.txt.
+  - **Automated HTTP Client (	est_api.py):**
+    - Constructs and dispatches a JSON POST payload (queue_length=10, hour_of_day=14, day_of_week=2, is_weekend=0, ctive_counters=1) to http://127.0.0.1:8000/api/predict/.
+    - Handles 
+equests.exceptions.ConnectionError gracefully, displaying a helpful reminder to launch python manage.py runserver if the server is offline.
+    - Pretty-prints response status codes and indented JSON telemetry (predicted_wait_minutes, engine, latency_ms).
+- **Detailed What Was Modified:**
+  - 
+equirements.txt: Pinned 
+equests==2.34.2.
+
+---
+
 ### [Prompt Work / Working Tree] — 2026-11-09: Reconstruction of Standalone Scenario Test Suite (	est_model.py)
 - **Type:** Bugfix, Refactor & Test Automation (ix / 	est)
 - **Author:** gomugomucode
