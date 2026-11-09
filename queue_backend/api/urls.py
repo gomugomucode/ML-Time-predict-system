@@ -1,5 +1,5 @@
 from django.urls import path
-from views import ApiRootView, PredictWaitTimeView
+from api.views import ApiRootView, PredictWaitTimeView
 
 urlpatterns = [
     path("", ApiRootView.as_view(), name="api_root"),
