@@ -31,6 +31,29 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
+### [Prompt Work / Working Tree] — 2026-11-09: Comprehensive Supervisor Progress & Technical Evaluation Report
+- **Type:** Documentation, Academic Review & System Audit (docs)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - docs/PROJECT_PROGRESS_AND_SUPERVISOR_REPORT.md: Created master evaluation report for academic supervisors and external examiners.
+  - docs/README.md: Added direct navigation link and metadata entry for the supervisor report.
+  - README.md: Added primary link to the supervisor report in the documentation center index.
+- **Problem Statement & Motivation:**
+  - An external examiner or academic supervisor reviewing the project requires an authoritative, rigorous, and self-contained document summarizing all theoretical formulations, empirical findings, architectural decisions, and current progress without having to piece together fragmented commit logs or source files.
+- **Detailed What Was Added & Implemented:**
+  - **Official Repository Attribution:** Prominently featured the official GitHub repository link: https://github.com/gomugomucode/ML-Time-predict-system.
+  - **Theoretical & Mathematical Grounding:** Detailed Little's Law ( = \lambda W_q$), multiserver queueing dynamics (/M/c$), and the analytical Average Service Time (AST) formula ({AST} = \frac{L_q \cdot \overline{S}}{c}$ with $\overline{S} = 2.38\text{ min}$).
+  - **Data Harmonization Summary:** Documented the multi-source ingestion of 14,545 records across erified_queue_waiting_time_dataset.csv, queue_data.csv, and wait_times.csv in main.py, timestamp standardization across formats, and the $ epoch boundary enforcing zero post-arrival feature leakage.
+  - **Machine Learning Benchmarks:** Detailed the 80/20 chronological split, the Naive Historical Mean baseline (.09\text{ min}$ MAE), and the trained RandomForestRegressor (.68\text{ min}$ MAE, .07\text{ min}$ RMSE, ^2 = 0.9083$), achieving an **83.62% error reduction** over baseline (exceeding the $\ge 15\%$ requirement).
+  - **Serving Architecture & Engineering Innovations:** Documented the thread-safe in-memory singleton (WaitTimePredictor with 	hreading.RLock), startup pre-warming via Django's AppConfig.ready(), the multi-process reloader guard, and candidate path resolution for the 33.3 MB model artifact.
+  - **SLA & Latency Profiling:** Documented verified empirical latencies: **4.06 ms** warm ML inference (satisfying the $\le 10\text{ ms}$ SLA) and **0.019 ms** failover fallback.
+  - **REST API Specifications:** Detailed endpoints (GET /, GET /api/, GET /api/predict/, POST /api/predict/), payload contracts, and automated test cases covering input validation and fallback failover.
+  - **Phase Progression Matrix:** Outlined completed milestones (Phases 1-5, Phase 7 serving) vs. upcoming sprint deliverables (Phase 6 ORM database models, Phase 7 ticket issuance endpoint, Phase 8 React.js frontend).
+- **System Verification:**
+  - Verified Markdown rendering, KaTeX equation syntax, and verified GitHub link accessibility.
+
+---
+
 ### [Prompt Work / Working Tree] — 2026-11-02: Thread-Safe ML Prediction Service Singleton (ml_service.py) with Dual-Engine Fallback & REST Endpoint
 - **Type:** Feature, Refactor & Architecture Hardening (feat / refactor)
 - **Author:** gomugomucode

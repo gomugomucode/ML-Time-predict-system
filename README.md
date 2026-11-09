@@ -109,6 +109,7 @@ ML queue/
 ## 📖 Quick Links & Documentation
 
 ### 📑 Documentation & Codebase Audit (`docs/`)
+- 🎓 **Supervisor & Evaluation Report:** [`docs/PROJECT_PROGRESS_AND_SUPERVISOR_REPORT.md`](docs/PROJECT_PROGRESS_AND_SUPERVISOR_REPORT.md) — Executive report for supervisors/external reviewers detailing completed phases, theoretical models, 83.6% ML accuracy gain, and ~4 ms serving benchmarks.
 - 📑 **Documentation Center Index:** [`docs/README.md`](docs/README.md) — Documentation navigation & audit portal.
 - 📋 **Codebase & Dataset Audit:** [`docs/AUDIT.md`](docs/AUDIT.md) — Full audit of all 12,017 records, statistical distributions, code state, and SLAs.
 - 🔄 **Change History & Changelog:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — Chronological log of all commits, refactors, and feature additions.
