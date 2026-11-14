@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-14) - fix: resolve format_html TypeError in PredictionLogAdmin by utilizing mark_safe for static badges
 PENDING (2026-11-14) - feat: implement 1-to-1 PredictionLog drift tracking, record_ground_truth error computation, and color-coded Django Admin error audit
 PENDING (2026-11-14) - test: implement multi-ticket queue arrival and teller service simulation suite (test_tickets.py) with dual-route URL support
 PENDING (2026-11-02) - feat: implement thread-safe ML prediction service singleton (ml_service.py) with dual-engine AST fallback and REST endpoint
@@ -32,6 +33,26 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-14: Fix `format_html` TypeError in `PredictionLogAdmin`
+- **Type:** Bug Fix & Admin UI Stability (`fix` / `admin`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/api/admin.py`: Replaced parameter-less `format_html()` with `mark_safe()` and adopted `@admin.display(description="Prediction Error")`.
+- **Problem Statement & Root Cause:**
+  - When accessing the Django Admin changelist view for `PredictionLog` (`http://127.0.0.1:8000/admin/api/predictionlog/`), a 500 Internal Server Error was raised:
+    `TypeError at /admin/api/predictionlog/: args or kwargs must be provided.` originating from `django/utils/html.py, line 142, in format_html`.
+  - In Django's implementation of `format_html(format_string, *args, **kwargs)`, an assertion enforces `if not args and not kwargs: raise TypeError("args or kwargs must be provided.")`.
+  - In `PredictionLogAdmin.error_display`, when a ticket is still waiting in queue (`obj.absolute_error is None`), `format_html('<span style="color: #6c757d; font-style: italic;">Waiting Call</span>')` was called without formatting arguments, triggering the `TypeError`.
+- **Detailed Solution & Implementation:**
+  - Imported `mark_safe` from `django.utils.safestring`.
+  - Returned `mark_safe('<span style="color: #6c757d; font-style: italic;">Waiting Call</span>')` for the static HTML state, which cleanly avoids parameter validation while guaranteeing safe HTML rendering in Django Admin.
+  - Modernized the column header definition using the `@admin.display(description="Prediction Error")` decorator in place of the legacy attribute assignment `error_display.short_description`.
+- **Verification & Testing:**
+  - Executed authenticated admin request simulation to `/admin/api/predictionlog/` via Django test utilities.
+  - Confirmed HTTP 200 response with changelist template rendering (25,958 bytes) and zero exceptions across both unresolved waiting tickets and resolved tickets.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-14: Model Drift Tracking (`PredictionLog`), Error Resolution & Admin Error Dashboard
 - **Type:** Feature, Database Architecture & Observability (`feat` / `db` / `admin`)

@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from api.models import Counter, PredictionLog, Service, Ticket
 
 
@@ -73,9 +74,10 @@ class PredictionLogAdmin(admin.ModelAdmin):
     search_fields = ("ticket__ticket_number",)
     ordering = ("-created_at",)
 
+    @admin.display(description="Prediction Error")
     def error_display(self, obj: PredictionLog):
         if obj.absolute_error is None:
-            return format_html(
+            return mark_safe(
                 '<span style="color: #6c757d; font-style: italic;">Waiting Call</span>'
             )
         # Color-code errors: Green <= 5m, Yellow 5-10m, Red > 10m
@@ -87,5 +89,3 @@ class PredictionLogAdmin(admin.ModelAdmin):
         return format_html(
             '<b style="color: {};">±{} min</b>', color, obj.absolute_error
         )
-
-    error_display.short_description = "Prediction Error"
