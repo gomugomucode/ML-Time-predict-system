@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.ml_service import WaitTimePredictor, predict_waiting_time
-from models import Counter, PredictionLog, Service, Ticket
+from api.models import Counter, PredictionLog, Service, Ticket
 
 
 class ApiRootView(APIView):
