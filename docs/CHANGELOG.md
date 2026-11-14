@@ -31,6 +31,24 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
+### [Prompt Work / Working Tree] — 2026-11-09: Preload Module Import Resolution in pi/apps.py
+- **Type:** Bugfix & Initialization Hardening (ix)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - queue_backend/api/apps.py: Corrected internal module import statement.
+- **Problem Statement & Root Cause:**
+  - During server startup (python manage.py runserver), the terminal emitted:
+    >>> [ML Service] Warning during model preloading: No module named 'ml_service'.
+  - While predictions still succeeded due to lazy-initialization in iews.py upon the first request, the boot preloader in pps.py failed because it used an absolute import (rom ml_service import WaitTimePredictor) instead of an explicit relative package import (rom .ml_service import WaitTimePredictor). Since queue_backend/ is on sys.path rather than queue_backend/api/, the absolute import failed.
+- **Detailed What Was Modified:**
+  - queue_backend/api/apps.py: Changed rom ml_service import WaitTimePredictor to rom .ml_service import WaitTimePredictor inside ApiConfig.ready().
+- **System Verification & Output:**
+  - Ran python manage.py check: Verified clean console output:
+    >>> [ML Service] WaitTimePredictor preloaded into in-memory singleton (Ready).
+    System check identified no issues (0 silenced).
+
+---
+
 ### [Prompt Work / Working Tree] — 2026-11-09: HTTP Client Integration & Test Script (	est_api.py)
 - **Type:** Feature, Tooling & Dependency Addition (eat / 	ool)
 - **Author:** gomugomucode

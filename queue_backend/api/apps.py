@@ -23,7 +23,7 @@ class ApiConfig(AppConfig):
 
         if not is_reloader_parent:
             try:
-                from ml_service import WaitTimePredictor
+                from .ml_service import WaitTimePredictor
 
                 predictor = WaitTimePredictor.get_instance()
                 if predictor.is_ready():
