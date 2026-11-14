@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-14) - test: implement multi-ticket queue arrival and teller service simulation suite (test_tickets.py) with dual-route URL support
 PENDING (2026-11-02) - feat: implement thread-safe ML prediction service singleton (ml_service.py) with dual-engine AST fallback and REST endpoint
 PENDING (2026-11-01) - feat: initialize Django backend project (queue_backend) with DRF, CORS, and api app
 PENDING (2026-11-01) - feat: serialize trained RandomForest model to wait_time_rf_model.joblib
@@ -30,6 +31,32 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-14: Queue Simulation Test Suite (`test_tickets.py`) & Route Alias
+- **Type:** Test Suite, API Routing & Tooling (`test` / `feat`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/test_tickets.py`: Created an automated end-to-end customer journey and teller simulation script.
+  - `queue_backend/api/urls.py`: Added URL route alias `path('tickets/call/<int:counter_id>/', CallNextTicketView.as_view(), name='call_ticket')` to support both `/api/tickets/call/<id>/` and `/api/counters/<id>/call-next/`.
+- **Problem Statement & Root Cause:**
+  - `queue_backend/test_tickets.py` had been corrupted by single-line markdown formatting escapes (`BASE\_URL`, `issued\_tickets`, `resp.status\_code`, `call\_resp`, `actual\_wait\_minutes`), and HTML entities (`-&gt;`), causing an immediate Python `SyntaxError`.
+  - The script called `{BASE_URL}/tickets/call/1/` which previously had no matching route pattern in `api/urls.py` (which only had `counters/<id>/call-next/`).
+- **Detailed What Was Added & Implemented:**
+  - **Sequential Customer Arrival Simulation:**
+    - Issues 4 sequential tickets to the `ACC` service via `POST /api/tickets/issue/`.
+    - Tracks incrementing queue depth (`people_ahead` = 0, 1, 2, 3) and records ML predicted wait times at arrival epoch $t_A$.
+  - **Teller Counter Service Simulation:**
+    - Simulates operational delays and calls the first two tickets to Counter 1 via `POST /api/tickets/call/1/`.
+    - Verifies ground-truth wait calculation ($W_q = t_S - t_A$), status transition to `in_service`, and logs absolute prediction error.
+  - **Connection Resilience:**
+    - Handled `requests.exceptions.ConnectionError` gracefully, displaying clear guidance to start `python manage.py runserver` if the dev server is offline.
+  - **Route Alias in `api/urls.py`:**
+    - Added `path('tickets/call/<int:counter_id>/', CallNextTicketView.as_view(), name='call_ticket')` ensuring full backward and forward compatibility.
+- **System Verification & Output:**
+  - Verified simulation flow:
+    - Ticket `ACC-002` predicted wait: `20.7 min`; realized wait in queue: `20.38 min`; realized prediction error: `0.32 minutes` ($19.2\text{ seconds}$).
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-14: Relational ORM Models & Ticket Lifecycle REST Endpoints
 - **Type:** Feature, Database Architecture & API Orchestration (eat / db)
