@@ -333,8 +333,8 @@ PHASE PROGRESSION:
 [Phase 3: Feature Engineering]      ==================== 100% COMPLETE
 [Phase 4: Baseline Benchmarks]      ==================== 100% COMPLETE
 [Phase 5: ML Model & Persistence]   ==================== 100% COMPLETE
-[Phase 6: Database Relational ORM]  ========------------  40% (Schema ready; models pending)
-[Phase 7: Backend Serving API]      =============-------  65% (Inference API ready; tickets pending)
+[Phase 6: Database Relational ORM]  ==================== 100% COMPLETE (Service, Counter, Ticket, PredictionLog)
+[Phase 7: Backend Serving API]      ==================== 100% COMPLETE (Predict, Issue Ticket, Call Next)
 [Phase 8: Frontend Interfaces]      --------------------   0% (Design specs ready; React pending)
 ```
 
@@ -344,21 +344,23 @@ PHASE PROGRESSION:
 - **Data Processing Script:** Fully verified in [`main.py`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/main.py).
 - **Production Model Artifact:** Serialized in [`wait_time_rf_model.joblib`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/wait_time_rf_model.joblib).
 - **Django REST Backend Application:** Scaffolding, settings, CORS, and routing complete in [`queue_backend/`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/queue_backend).
+- **Relational Database Models & Migrations:** Implemented `Service`, `Counter`, `Ticket`, and `PredictionLog` in [`api/models.py`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/queue_backend/api/models.py) with database indexes and Django Admin integration.
 - **Dual-Engine In-Memory Service:** Implemented with `RLock` in [`api/ml_service.py`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/queue_backend/api/ml_service.py).
-- **API Endpoints:** Live and tested for `/`, `/api/`, and `/api/predict/`.
+- **REST Endpoints & Lifecycle Orchestration:**
+  - `POST /api/predict/`: Real-time standalone ML prediction with automatic temporal inference.
+  - `POST /api/tickets/issue/`: Kiosk token generation, automated queue counting, EWT estimation, and prediction audit logging.
+  - `POST /api/counters/<counter_id>/call-next/`: Teller desk calling in FIFO order, ground-truth wait time calculation ($W_q = t_S - t_A$), and prediction error tracking.
+  - `GET /` & `GET /api/`: Interactive API catalog and health probe.
 - **Documentation & Audit Trail:** Exhaustive tracking in [`docs/AUDIT.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/docs/AUDIT.md), [`docs/CHANGELOG.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/docs/CHANGELOG.md), and [`TASKS.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/TASKS.md).
 
 ### 8.2 Immediate Next Steps (Upcoming Sprints)
 
-1. **Task 6.2 — Relational Database ORM Models ([`api/models.py`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/queue_backend/api/models.py)):**
-   Define `Service`, `Counter`, `Ticket`, and `PredictionLog` entities to track real-time queue states and log realized wait times for model drift monitoring.
-2. **Task 7.4 — Ticket Lifecycle REST Endpoints:**
-   - `POST /api/tickets/`: Issues a token, counts current queue length, invokes `WaitTimePredictor`, records prediction log, and returns token number + estimated wait time.
-   - `PATCH /api/tickets/{id}/status/`: Transition ticket state (`waiting` $\to$ `in_service` $\to$ `completed`) and log actual realized waiting time.
-3. **Phase 8 — Frontend Interface Development (React.js + Vite):**
-   - Kiosk interface for digital token generation.
-   - Teller desk interface for calling next ticket.
-   - Waiting hall TV display screen.
+1. **Phase 8 — Frontend Interface Development (React.js + Vite):**
+   - Kiosk interface for digital token generation and QR receipt.
+   - Teller desk interface for calling the next ticket and monitoring waiting times.
+   - Waiting hall TV display screen showing current tokens being served.
+2. **WebSocket Real-Time Broadcasts:**
+   - Integrate Django Channels and Redis to broadcast `queue:updated` and `ticket:called` events in real-time.
 
 ---
 

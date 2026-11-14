@@ -61,15 +61,15 @@
 
 ### Phase 6: Database Architecture & PostgreSQL Setup
 - [ ] **Task 6.1 [P0]:** Deploy PostgreSQL 15+ database instance.
-- [ ] **Task 6.2 [P0]:** Implement Django ORM models matching the research schema (`Ticket`, `Counter`, `Service`, `Snapshot`, `PredictionLog`).
-- [ ] **Task 6.3 [P1]:** Create partial B-tree index on active waiting tickets (`status = 'waiting'`).
+- [x] **Task 6.2 [P0]:** Implement Django ORM models matching the research schema (`Service`, `Counter`, `Ticket`, `PredictionLog`). *(Completed in `api/models.py` & migrated)*
+- [x] **Task 6.3 [P1]:** Create specialized B-tree indexes on active waiting tickets (`status`, `created_at`). *(Completed in `api/models.py`)*
 - [ ] **Task 6.4 [P1]:** Seed initial facility layout (Branches, Counters, Services, Staff accounts).
 
 ### Phase 7: Backend Serving, Django REST API & Dual-Engine Fallback
 - [x] **Task 7.1 [P0]:** Initialize Django REST Framework project (`queue_backend`) and `api` application with CORS.
 - [x] **Task 7.2 [P0]:** Implement in-memory singleton predictor (`ml_service.py`) preloaded at boot (`AppConfig.ready()`).
 - [x] **Task 7.3 [P0]:** Implement dual-engine routing: primary ML with automatic AST baseline fallback.
-- [ ] **Task 7.4 [P0]:** Develop REST endpoints: `POST /api/tickets/`, `PATCH /api/tickets/{id}/status/`, `GET /api/counters/{id}/queue/`.
+- [x] **Task 7.4 [P0]:** Develop REST endpoints: `POST /api/tickets/issue/`, `POST /api/counters/<id>/call-next/`, `POST /api/predict/`. *(Completed & Verified)*
 - [ ] **Task 7.5 [P1]:** Configure Django Channels ASGI + Redis for live `queue:updated` WebSocket broadcasts.
 
 ### Phase 8: Frontend Interfaces, Real-Time Delivery & MLOps

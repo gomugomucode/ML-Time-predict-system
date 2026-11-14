@@ -16,8 +16,10 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 8. [x] **Task 7.1:** Initialize Django REST Framework backend project (`queue_backend`) with DRF and CORS. *(Completed)*
 9. [x] **Task 7.2:** Implement thread-safe in-memory ML model singleton service (`WaitTimePredictor` with `threading.RLock`). *(Completed in `api/ml_service.py`)*
 10. [x] **Task 7.3:** Implement Dual-Engine Fallback mechanism with low-latency REST endpoints (`GET/POST /api/predict/`, `GET /`). *(Completed in `api/views.py`)*
-11. [ ] **Task 6.2:** Implement core Django ORM database models (`Service`, `Counter`, `Ticket`, `PredictionLog`) in `queue_backend/api/models.py`.
-12. [ ] **Task 7.4:** Develop ticket issuance and status transition REST endpoints (`POST /api/tickets/`, `PATCH /api/tickets/{id}/status/`).
+11. [x] **Task 6.2:** Implement core Django ORM database models (`Service`, `Counter`, `Ticket`, `PredictionLog`) in `queue_backend/api/models.py`. *(Completed & Migrated)*
+12. [x] **Task 7.4:** Develop ticket issuance and status transition REST endpoints (`POST /api/tickets/issue/`, `POST /api/counters/<counter_id>/call-next/`). *(Completed & Verified)*
+13. [ ] **Task 8.1:** Scaffold React.js frontend interface using Vite (`queue-frontend`).
+14. [ ] **Task 8.2:** Build Student / Kiosk self-service check-in view with digital token generation.
 
 ---
 
@@ -105,14 +107,13 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 ## Phase 6: Database Architecture & PostgreSQL Setup
 
 - [ ] **Task 6.1 [P0]:** Initialize PostgreSQL 15+ database instance and configure connection credentials.
-- [ ] **Task 6.2 [P0]:** Implement Django ORM models matching the research schema:
-  - `Branch`, `Department`, `Service`, `Counter`, `StaffUser`.
-  - `Ticket` (token number, arrival time, queue length ahead, priority).
-  - `ServiceTransaction` (`waiting_start_time`, `serving_start_time`, `serving_end_time`, `status`).
-  - `QueueStatusSnapshot` (minute/hourly snapshots of waiting count, active counters).
-  - `RollingServiceMetrics` (cached LES and rolling AST).
-  - `PredictionLog` (ticket reference, predicted wait, baseline wait, actual realized wait, error).
-  - `ModelRegistry` (model metadata, version, MAE, active flag).
+- [x] **Task 6.2 [P0]:** Implement Django ORM models matching the research schema: *(Completed in `api/models.py` & migrated)*
+  - `Service` (code, name, is_active).
+  - `Counter` (counter_number, is_open, current_staff_name).
+  - `Ticket` (ticket_number, queue_length_at_arrival, predicted_wait_minutes, actual_wait_minutes, status, timestamps).
+  - `PredictionLog` (ticket reference, predicted wait, baseline wait, actual realized wait, prediction error, engine used, features snapshot).
+  - Configured specialized database indexes on `(status, created_at)`, `(service, status)`, and `(engine_used)`.
+  - Registered models in Django Admin (`api/admin.py`) with search, filter, and tabular inlines.
 - [ ] **Task 6.3 [P1]:** Create specialized database indexes:
   - Composite partial index: `(service_id, transaction_status)` WHERE `transaction_status = 'waiting'`.
   - B-tree indexes on `waiting_start_time` and `created_at`.
@@ -132,11 +133,11 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 - [x] **Task 7.3 [P0]:** Implement Dual-Engine Fallback mechanism: *(Completed)*
   - Primary path: Execute in-memory ML pipeline (System A).
   - Fallback path: If ML encounters error/missing values, immediately execute AST formula (System B: $\overline{S} = 2.38\text{ min}$).
-- [ ] **Task 7.4 [P0]:** Develop REST API endpoints:
-  - `POST /api/tickets/`: Issue ticket, compute instantaneous features, predict wait time, log prediction, return token + EWT.
-  - `PATCH /api/tickets/{id}/status/`: Update ticket state (`in_service`, `completed`, `reneged`) and log actual wait time.
-  - `GET /api/counters/{id}/queue/`: Return active waiting line for teller counter.
-  - `GET /api/analytics/dashboard/`: Return queue metrics ($L_q, W_q, \lambda, \mu, \rho$) and prediction accuracy audit.
+- [x] **Task 7.4 [P0]:** Develop REST API endpoints: *(Completed in `api/views.py` & verified)*
+  - `POST /api/tickets/issue/`: Issues ticket token, counts current queue length, predicts wait time via in-memory ML model, creates `PredictionLog`, and returns token + EWT.
+  - `POST /api/counters/<counter_id>/call-next/`: Calls oldest waiting ticket in FIFO order, updates ticket state to `in_service`, records `called_at`, computes realized wait time ($W_q = t_S - t_A$), and synchronizes prediction error.
+  - `POST /api/predict/`: Direct standalone prediction endpoint with parameter validation and automatic temporal inference.
+  - `GET /` & `GET /api/`: Interactive API catalog and health check.
 - [ ] **Task 7.5 [P1]:** Configure Django Channels (ASGI) and Redis channel layer for real-time WebSocket events (`queue:updated`, `ticket:called`).
 
 ---

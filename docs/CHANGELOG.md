@@ -31,6 +31,49 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 
 ## 🔍 Detailed Change Log by Release / Commit
 
+### [Prompt Work / Working Tree] — 2026-11-14: Relational ORM Models & Ticket Lifecycle REST Endpoints
+- **Type:** Feature, Database Architecture & API Orchestration (eat / db)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - queue_backend/api/models.py: Implemented production Django ORM entities (Service, Counter, Ticket, PredictionLog).
+  - queue_backend/api/admin.py: Registered all models in Django Admin with filters, search, and tabular inlines.
+  - queue_backend/api/views.py: Implemented IssueTicketView and CallNextTicketView along with updated ApiRootView.
+  - queue_backend/api/urls.py: Configured /api/tickets/issue/ and /api/counters/<counter_id>/call-next/.
+  - queue_backend/api/migrations/0001_initial.py: Generated and applied initial schema migration.
+  - queue_backend/test_api.py: Updated automated test suite to validate ticket issuance, prediction logging, and teller calling.
+  - TASKS.md & 
+esearch/TASKS.md: Marked Task 6.2 and Task 7.4 as completed [x].
+- **Problem Statement & Root Cause:**
+  - queue_backend/api/models.py had been corrupted by single-line markdown concatenation with escaped characters (max\_length, is\_active, STATUS\_CHOICES), preventing model compilation.
+  - The backend only supported isolated wait-time predictions without persistent state: it lacked tables to store active queue tokens, track customer queue journeys, compute actual realized waiting times ( = t_S - t_A$), or audit model prediction drift over time.
+- **Detailed What Was Added & Implemented:**
+  - **Relational ORM Models (pi/models.py):**
+    - Service: Models service categories (
+ame, code unique e.g., 'ACC', is_active, created_at).
+    - Counter: Models service desks/teller windows (counter_number, 
+ame, is_open, current_staff_name, updated_at).
+    - Ticket: Models queue tokens. Captures queue_length_at_arrival and predicted_wait_minutes at arrival epoch $, tracks statuses (waiting, in_service, completed, cancelled), and records epoch timestamps (created_at, called_at, completed_at). Implements mark_as_called(counter) which automatically computes  = \frac{t_S - t_A}{60}$ in minutes and synchronizes linked PredictionLog records.
+    - PredictionLog: Immutable audit model storing every ML/fallback prediction, actual realized wait time, absolute prediction error, inference latency in ms, and a JSON snapshot of input features for model drift tracking.
+    - Added database indexes on (status, created_at), (service, status), (created_at), and (engine_used).
+  - **Django Admin Customization (pi/admin.py):**
+    - Customized ServiceAdmin, CounterAdmin, TicketAdmin, and PredictionLogAdmin.
+    - Embedded PredictionLogInLine inside TicketAdmin for instant inspection of prediction telemetry per ticket.
+  - **Ticket Lifecycle REST Endpoints (pi/views.py):**
+    - POST /api/tickets/issue/ (IssueTicketView): Self-service kiosk endpoint. Fetches/creates the service category, calculates current queue depth, infers arrival features, runs the in-memory ML predictor, saves the Ticket, and logs the PredictionLog entry. Returns token (e.g., ACC-001), people ahead, and estimated wait minutes.
+    - POST /api/counters/<counter_id>/call-next/ (CallNextTicketView): Teller counter endpoint. Calls the oldest waiting ticket in FIFO order, transitions state to in_service, records called_at, and calculates ground-truth waiting duration and prediction error.
+  - **Automated Client Test Suite (	est_api.py):**
+    - Updated script to test all three API operations: direct inference, ticket issuance, and teller calling in one command.
+- **Database Migrations & System Verification:**
+  - Ran python manage.py makemigrations api: Generated pi/migrations/0001_initial.py.
+  - Ran python manage.py migrate: Applied migration with 0 issues.
+  - Automated Integration Test:
+    - Issued Ticket 1 (ACC-001): people_ahead = 0, predicted_wait = 20.8 min, status = 201 Created.
+    - Issued Ticket 2 (ACC-002): people_ahead = 1, predicted_wait = 20.7 min, status = 201 Created.
+    - Called Next Ticket to Counter 1: Returned ACC-001, ctual_wait_minutes = 0.0 min, prediction_error_minutes = 20.8 min.
+    - Verified PredictionLog record in database synchronized with actual wait and error metrics.
+
+---
+
 ### [Prompt Work / Working Tree] — 2026-11-09: Preload Module Import Resolution in pi/apps.py
 - **Type:** Bugfix & Initialization Hardening (ix)
 - **Author:** gomugomucode

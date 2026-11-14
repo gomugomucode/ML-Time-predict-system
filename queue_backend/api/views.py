@@ -3,12 +3,14 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.ml_service import WaitTimePredictor
+from api.ml_service import WaitTimePredictor, predict_waiting_time
+from models import Counter, PredictionLog, Service, Ticket
 
 
 class ApiRootView(APIView):
@@ -26,16 +28,31 @@ class ApiRootView(APIView):
                 "status": "online",
                 "ml_engine_ready": predictor.is_ready(),
                 "endpoints": {
+                    "issue_ticket": request.build_absolute_uri("/api/tickets/issue/"),
+                    "call_next_ticket": request.build_absolute_uri(
+                        "/api/counters/1/call-next/"
+                    ),
                     "predict_wait_time": request.build_absolute_uri("/api/predict/"),
                     "admin_dashboard": request.build_absolute_uri("/admin/"),
                 },
                 "quick_test_instructions": {
-                    "method": "POST",
-                    "url": request.build_absolute_uri("/api/predict/"),
-                    "sample_body": {
-                        "queue_length": 8,
-                        "hour_of_day": 14,
-                        "active_counters": 2,
+                    "issue_ticket": {
+                        "method": "POST",
+                        "url": request.build_absolute_uri("/api/tickets/issue/"),
+                        "sample_body": {"service_code": "ACC"},
+                    },
+                    "call_next": {
+                        "method": "POST",
+                        "url": request.build_absolute_uri("/api/counters/1/call-next/"),
+                    },
+                    "predict_wait_time": {
+                        "method": "POST",
+                        "url": request.build_absolute_uri("/api/predict/"),
+                        "sample_body": {
+                            "queue_length": 8,
+                            "hour_of_day": 14,
+                            "active_counters": 2,
+                        },
                     },
                 },
             },
@@ -184,6 +201,160 @@ class PredictWaitTimeView(APIView):
                 "active_counters": result["active_counters"],
                 "features": result["features_used"],
                 "inference_latency_ms": result["latency_ms"],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class IssueTicketView(APIView):
+    """
+    POST /api/tickets/issue/
+    Issues a new ticket token at the kiosk, counts the current queue ahead,
+    predicts estimated wait time using the in-memory ML model, saves the ticket
+    and creates an immutable prediction log for audit.
+
+    Request Payload:
+    {
+        "service_code": "ACC"   # e.g., "ACC", "ADM", "EXM" (defaults to "ACC")
+    }
+    """
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        service_code = request.data.get("service_code", "ACC").upper().strip()
+
+        # 1. Fetch or create service category
+        service, _ = Service.objects.get_or_create(
+            code=service_code, defaults={"name": f"{service_code} Service"}
+        )
+
+        # 2. Count active waiting tickets for this service
+        current_waiting_count = Ticket.objects.filter(
+            service=service, status="waiting"
+        ).count()
+
+        # 3. Extract instantaneous arrival features
+        now = datetime.datetime.now()
+        hour_of_day = now.hour
+        day_of_week = now.weekday()
+        is_weekend = 1 if day_of_week >= 5 else 0
+
+        # Determine currently open counters (default to 1 if none configured)
+        open_counters_count = Counter.objects.filter(is_open=True).count()
+        active_counters = max(1, open_counters_count)
+
+        # 4. Predict wait time via in-memory Singleton Predictor
+        predictor = WaitTimePredictor.get_instance()
+        pred_res = predictor.predict_detailed(
+            queue_length=current_waiting_count,
+            hour_of_day=hour_of_day,
+            day_of_week=day_of_week,
+            is_weekend=is_weekend,
+            active_counters=active_counters,
+        )
+        predicted_wait = pred_res["predicted_wait_time_minutes"]
+        engine_used = pred_res["engine"]
+        latency_ms = pred_res["latency_ms"]
+
+        # 5. Generate Ticket Token Number (e.g. ACC-001, ACC-002)
+        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        daily_ticket_count = (
+            Ticket.objects.filter(service=service, created_at__gte=today_start).count()
+            + 1
+        )
+        ticket_number = f"{service.code}-{daily_ticket_count:03d}"
+
+        # 6. Save Ticket record to Database
+        ticket = Ticket.objects.create(
+            ticket_number=ticket_number,
+            service=service,
+            queue_length_at_arrival=current_waiting_count,
+            predicted_wait_minutes=round(predicted_wait, 1),
+            prediction_engine=engine_used,
+            status="waiting",
+        )
+
+        # 7. Create immutable PredictionLog entry for model drift & SLA tracking
+        PredictionLog.objects.create(
+            ticket=ticket,
+            predicted_wait_minutes=ticket.predicted_wait_minutes,
+            engine_used=engine_used,
+            inference_latency_ms=latency_ms,
+            features_snapshot={
+                "queue_length": current_waiting_count,
+                "hour_of_day": hour_of_day,
+                "day_of_week": day_of_week,
+                "is_weekend": is_weekend,
+                "active_counters": active_counters,
+            },
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "ticket_number": ticket.ticket_number,
+                "service": service.name,
+                "people_ahead": current_waiting_count,
+                "estimated_wait_minutes": ticket.predicted_wait_minutes,
+                "engine": engine_used,
+                "created_at": ticket.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CallNextTicketView(APIView):
+    """
+    POST /api/counters/<counter_id>/call-next/
+    Teller desk action: Calls the oldest waiting customer to the specified counter,
+    marks ticket as 'in_service', and computes ground-truth actual wait time W_q = t_S - t_A.
+    """
+
+    def post(
+        self, request: Request, counter_id: int, *args: Any, **kwargs: Any
+    ) -> Response:
+        # 1. Fetch or create the counter
+        counter, _ = Counter.objects.get_or_create(
+            counter_number=int(counter_id),
+            defaults={"name": f"Counter {counter_id}", "is_open": True},
+        )
+
+        # 2. Get the oldest waiting ticket in FIFO order
+        next_ticket = (
+            Ticket.objects.filter(status="waiting").order_by("created_at").first()
+        )
+        if not next_ticket:
+            return Response(
+                {
+                    "status": "empty",
+                    "message": "No tickets currently waiting in line.",
+                    "counter": counter.counter_number,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # 3. Mark ticket as called (updates status, called_at, actual_wait_minutes, and PredictionLog)
+        next_ticket.mark_as_called(counter)
+
+        prediction_error = (
+            round(
+                abs(
+                    next_ticket.actual_wait_minutes - next_ticket.predicted_wait_minutes
+                ),
+                2,
+            )
+            if next_ticket.actual_wait_minutes is not None
+            else None
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "called_ticket": next_ticket.ticket_number,
+                "service": next_ticket.service.code,
+                "counter": counter.counter_number,
+                "actual_wait_minutes": next_ticket.actual_wait_minutes,
+                "predicted_wait_minutes": next_ticket.predicted_wait_minutes,
+                "prediction_error_minutes": prediction_error,
             },
             status=status.HTTP_200_OK,
         )
