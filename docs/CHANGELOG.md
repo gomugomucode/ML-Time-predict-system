@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-14) - feat: implement 1-to-1 PredictionLog drift tracking, record_ground_truth error computation, and color-coded Django Admin error audit
 PENDING (2026-11-14) - test: implement multi-ticket queue arrival and teller service simulation suite (test_tickets.py) with dual-route URL support
 PENDING (2026-11-02) - feat: implement thread-safe ML prediction service singleton (ml_service.py) with dual-engine AST fallback and REST endpoint
 PENDING (2026-11-01) - feat: initialize Django backend project (queue_backend) with DRF, CORS, and api app
@@ -31,6 +32,38 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-14: Model Drift Tracking (`PredictionLog`), Error Resolution & Admin Error Dashboard
+- **Type:** Feature, Database Architecture & Observability (`feat` / `db` / `admin`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/api/models.py`: Upgraded `PredictionLog` to a 1-to-1 relationship with `Ticket`, added feature snapshot columns, `absolute_error`, `squared_error`, and `record_ground_truth()`.
+  - `queue_backend/api/views.py`: Updated `IssueTicketView` to automatically create `PredictionLog` snapshots, and `CallNextTicketView` to resolve errors via `record_ground_truth()`.
+  - `queue_backend/api/admin.py`: Added color-coded `error_display` in `PredictionLogAdmin` (Green <= 5m, Yellow 5-10m, Red > 10m).
+  - `queue_backend/api/migrations/0002_...`: Generated and applied schema migration for error tracking.
+- **Problem Statement & Motivation:**
+  - In production queue management, machine learning models experience drift as campus schedules, teller staffing, or student arrival volumes shift.
+  - To detect drift in real-time, every prediction must be permanently paired with its instantaneous feature snapshot at arrival epoch $t_A$, and its ground-truth realized duration $W_q = t_S - t_A$ must be recorded as soon as the customer is called to compute absolute and squared errors ($|y - \hat{y}|$ and $(y - \hat{y})^2$).
+- **Detailed What Was Added & Implemented:**
+  - **Enhanced `PredictionLog` Model:**
+    - `ticket`: `OneToOneField(Ticket, on_delete=models.CASCADE, related_name="prediction_log")`.
+    - Feature snapshot fields: `queue_length`, `hour_of_day`, `day_of_week`, `is_weekend`, `model_version` (default `'rf_v1.0'`).
+    - Error columns: `absolute_error` (MAE metric) and `squared_error` (MSE metric).
+    - `record_ground_truth(actual_wait)`: Automatically computes and persists absolute error, squared error, and `resolved_at` timestamp.
+  - **View Orchestration (`api/views.py`):**
+    - `IssueTicketView`: Creates `PredictionLog` linked to the new ticket with the exact feature snapshot and predicted wait time.
+    - `CallNextTicketView`: Invokes `next_ticket.prediction_log.record_ground_truth(actual_wait)` immediately upon calling the customer to a teller desk.
+  - **Visual Color-Coded Admin Dashboard (`api/admin.py`):**
+    - Customized `PredictionLogAdmin` with `error_display`:
+      * `Waiting Call`: Muted grey text (`#6c757d`) for tickets still waiting in queue.
+      * `<= 5.0 min`: Green bold text (`#28a745`) indicating high model precision.
+      * `5.0 - 10.0 min`: Amber bold text (`#e0a800`) indicating moderate variance.
+      * `> 10.0 min`: Red bold text (`#dc3545`) flagging potential drift or outlier service duration.
+- **Database Migrations & Verification:**
+  - Generated and applied `api/migrations/0002_remove_predictionlog_api_predict_engine__9f3c95_idx_and_more.py`.
+  - Tested ticket issuance (`ACC-011`, `ACC-012`), verified `record_ground_truth()` calculates error and timestamps correctly.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-14: Queue Simulation Test Suite (`test_tickets.py`) & Route Alias
 - **Type:** Test Suite, API Routing & Tooling (`test` / `feat`)

@@ -65,22 +65,9 @@ class PredictWaitTimeView(APIView):
     POST /api/predict/
     Real-time waiting-time prediction endpoint powered by RandomForest ML model
     with sub-millisecond Average Service Time (AST) analytical fallback.
-
-    Payload format:
-    {
-        "queue_length": 8,          # int (required, >= 0)
-        "hour_of_day": 14,          # int (optional 0-23, defaults to current UTC/local hour)
-        "day_of_week": 1,           # int (optional 0-6, defaults to current day of week)
-        "is_weekend": 0,            # int (optional 0 or 1, automatically derived if omitted)
-        "active_counters": 1        # int (optional >= 1, defaults to 1)
-    }
     """
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """
-        Health and schema discovery endpoint for GET /api/predict/
-        Returns current engine readiness, model artifact status, and payload schema.
-        """
         predictor = WaitTimePredictor.get_instance()
         is_ready = predictor.is_ready()
         return Response(
@@ -120,7 +107,6 @@ class PredictWaitTimeView(APIView):
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         data = request.data
 
-        # 1. Validate queue_length
         if "queue_length" not in data:
             return Response(
                 {"error": "Missing required field 'queue_length'."},
@@ -137,7 +123,6 @@ class PredictWaitTimeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 2. Extract or infer temporal parameters
         now = datetime.datetime.now()
 
         try:
@@ -182,7 +167,6 @@ class PredictWaitTimeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 3. Execute prediction via in-memory Singleton Predictor
         predictor = WaitTimePredictor.get_instance()
         result = predictor.predict_detailed(
             queue_length=queue_length,
@@ -211,51 +195,42 @@ class IssueTicketView(APIView):
     POST /api/tickets/issue/
     Issues a new ticket token at the kiosk, counts the current queue ahead,
     predicts estimated wait time using the in-memory ML model, saves the ticket
-    and creates an immutable prediction log for audit.
-
-    Request Payload:
-    {
-        "service_code": "ACC"   # e.g., "ACC", "ADM", "EXM" (defaults to "ACC")
-    }
+    and creates a 1-to-1 PredictionLog audit snapshot for drift detection.
     """
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         service_code = request.data.get("service_code", "ACC").upper().strip()
 
-        # 1. Fetch or create service category
+        # 1. Real-time service category
         service, _ = Service.objects.get_or_create(
             code=service_code, defaults={"name": f"{service_code} Service"}
         )
 
-        # 2. Count active waiting tickets for this service
-        current_waiting_count = Ticket.objects.filter(
+        # 2. Real-time queue count ahead
+        current_waiting = Ticket.objects.filter(
             service=service, status="waiting"
         ).count()
 
-        # 3. Extract instantaneous arrival features
+        # 3. Extract arrival time features
         now = datetime.datetime.now()
-        hour_of_day = now.hour
-        day_of_week = now.weekday()
-        is_weekend = 1 if day_of_week >= 5 else 0
+        hour = now.hour
+        day = now.weekday()
+        weekend = 1 if day >= 5 else 0
 
-        # Determine currently open counters (default to 1 if none configured)
-        open_counters_count = Counter.objects.filter(is_open=True).count()
-        active_counters = max(1, open_counters_count)
-
-        # 4. Predict wait time via in-memory Singleton Predictor
+        # Model inference via singleton
         predictor = WaitTimePredictor.get_instance()
         pred_res = predictor.predict_detailed(
-            queue_length=current_waiting_count,
-            hour_of_day=hour_of_day,
-            day_of_week=day_of_week,
-            is_weekend=is_weekend,
-            active_counters=active_counters,
+            queue_length=current_waiting,
+            hour_of_day=hour,
+            day_of_week=day,
+            is_weekend=weekend,
+            active_counters=max(1, Counter.objects.filter(is_open=True).count()),
         )
         predicted_wait = pred_res["predicted_wait_time_minutes"]
         engine_used = pred_res["engine"]
         latency_ms = pred_res["latency_ms"]
 
-        # 5. Generate Ticket Token Number (e.g. ACC-001, ACC-002)
+        # 4. Generate Ticket Token (e.g. ACC-001)
         today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
         daily_ticket_count = (
             Ticket.objects.filter(service=service, created_at__gte=today_start).count()
@@ -263,39 +238,35 @@ class IssueTicketView(APIView):
         )
         ticket_number = f"{service.code}-{daily_ticket_count:03d}"
 
-        # 6. Save Ticket record to Database
+        # 5. Save ticket
         ticket = Ticket.objects.create(
             ticket_number=ticket_number,
             service=service,
-            queue_length_at_arrival=current_waiting_count,
-            predicted_wait_minutes=round(predicted_wait, 1),
+            queue_length_at_arrival=current_waiting,
+            predicted_wait_minutes=round(predicted_wait, 2),
             prediction_engine=engine_used,
             status="waiting",
         )
 
-        # 7. Create immutable PredictionLog entry for model drift & SLA tracking
+        # 6. Create audit log snapshot for drift detection
         PredictionLog.objects.create(
             ticket=ticket,
-            predicted_wait_minutes=ticket.predicted_wait_minutes,
+            model_version="rf_v1.0",
+            queue_length=current_waiting,
+            hour_of_day=hour,
+            day_of_week=day,
+            is_weekend=weekend,
+            predicted_wait_minutes=round(predicted_wait, 2),
             engine_used=engine_used,
             inference_latency_ms=latency_ms,
-            features_snapshot={
-                "queue_length": current_waiting_count,
-                "hour_of_day": hour_of_day,
-                "day_of_week": day_of_week,
-                "is_weekend": is_weekend,
-                "active_counters": active_counters,
-            },
         )
 
         return Response(
             {
                 "status": "success",
                 "ticket_number": ticket.ticket_number,
-                "service": service.name,
-                "people_ahead": current_waiting_count,
+                "people_ahead": current_waiting,
                 "estimated_wait_minutes": ticket.predicted_wait_minutes,
-                "engine": engine_used,
                 "created_at": ticket.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             },
             status=status.HTTP_201_CREATED,
@@ -304,24 +275,21 @@ class IssueTicketView(APIView):
 
 class CallNextTicketView(APIView):
     """
-    POST /api/counters/<counter_id>/call-next/
-    Teller desk action: Calls the oldest waiting customer to the specified counter,
-    marks ticket as 'in_service', and computes ground-truth actual wait time W_q = t_S - t_A.
+    POST /api/counters/<counter_id>/call-next/ or /api/tickets/call/<counter_id>/
+    Calls the oldest waiting ticket in FIFO order, marks as called,
+    computes actual wait time (W_q = t_S - t_A), and updates prediction audit log.
     """
 
     def post(
         self, request: Request, counter_id: int, *args: Any, **kwargs: Any
     ) -> Response:
-        # 1. Fetch or create the counter
-        counter, _ = Counter.objects.get_or_create(
-            counter_number=int(counter_id),
-            defaults={"name": f"Counter {counter_id}", "is_open": True},
-        )
+        counter, _ = Counter.objects.get_or_create(counter_number=int(counter_id))
 
-        # 2. Get the oldest waiting ticket in FIFO order
+        # Get oldest ticket in FIFO order
         next_ticket = (
             Ticket.objects.filter(status="waiting").order_by("created_at").first()
         )
+
         if not next_ticket:
             return Response(
                 {
@@ -332,8 +300,14 @@ class CallNextTicketView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        # 3. Mark ticket as called (updates status, called_at, actual_wait_minutes, and PredictionLog)
+        # Mark as called and compute actual wait time (W_q = t_S - t_A)
         next_ticket.mark_as_called(counter)
+
+        # Update prediction audit log with ground truth and error
+        if hasattr(next_ticket, "prediction_log"):
+            next_ticket.prediction_log.record_ground_truth(
+                next_ticket.actual_wait_minutes
+            )
 
         prediction_error = (
             round(
@@ -350,7 +324,6 @@ class CallNextTicketView(APIView):
             {
                 "status": "success",
                 "called_ticket": next_ticket.ticket_number,
-                "service": next_ticket.service.code,
                 "counter": counter.counter_number,
                 "actual_wait_minutes": next_ticket.actual_wait_minutes,
                 "predicted_wait_minutes": next_ticket.predicted_wait_minutes,
