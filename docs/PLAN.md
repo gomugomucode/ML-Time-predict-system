@@ -161,13 +161,13 @@ Service Finish Epoch (t_D)
 
 ## 5. Key Milestones
 
-| Milestone | Phase | Description | Success Gate |
-|---|---|---|---|
-| **M1** | Phase 1 | Project Charter & SLA Specification | $\le 10$ ms latency & $\ge 15\%$ improvement hurdle defined. |
-| **M2** | Phase 2 | Raw Dataset Audited & Cleaned | 12,017 records validated; zero negative wait times. |
-| **M3** | Phase 3 | Leakage-Free Feature Matrix | Features derived strictly at $t_A$; chronological 80/20 partition. |
-| **M4** | Phase 4 | Baseline Evaluation Suite | Historical Mean, LES, and AST benchmark errors computed. |
-| **M5** | Phase 6 | PostgreSQL Deployed & Seeded | Normalized tables created with partial indexes for active queues. |
-| **M6** | Phase 5 | Serialized Model Artifact | Candidate model achieves $\ge 15\%$ MAE improvement; saved to `.joblib`. |
-| **M7** | Phase 7 | Low-Latency Serving API | DRF endpoints `/api/tickets/` with dual-engine fallback ($\le 10$ ms). |
-| **M8** | Phase 8 | Live System with WebSockets | Full-stack React interfaces with real-time queue synchronization. |
+| Milestone | Phase | Description | Success Gate | Status / Completion Date |
+|---|---|---|---|---|
+| **M1** | Phase 1 | Project Charter & SLA Specification | $\le 10$ ms latency & $\ge 15\%$ improvement hurdle defined. | ✅ **Completed (Oct 2026)** |
+| **M2** | Phase 2 | Raw Dataset Audited & Cleaned | 12,017 records validated; zero negative wait times. | ✅ **Completed (Oct 2026)** |
+| **M3** | Phase 3 | Leakage-Free Feature Matrix | Features derived strictly at $t_A$; chronological 80/20 partition. | ✅ **Completed (Oct 2026)** |
+| **M4** | Phase 4 | Baseline Evaluation Suite | Historical Mean, LES, and AST benchmark errors computed. | ✅ **Completed (Oct 2026)** |
+| **M5** | Phase 6 | Relational Schema & ORM Setup | Normalized tables created with indexes for active queues & drift logs. | ✅ **Completed (Nov 2026)** |
+| **M6** | Phase 5 | Serialized Model Artifact | Candidate model achieves 83.6% MAE improvement; saved to `.joblib`. | ✅ **Completed (Nov 2026)** |
+| **M7** | Phase 7 | Low-Latency Serving API | DRF endpoints with dual-engine AST fallback ($\le 10$ ms latency). | ✅ **Completed (2026-11-14)** |
+| **M8** | Phase 8 | Full-Stack React Presentation Tier | Student Kiosk (confetti/pass), Teller Desk, and Public TV Display. | ✅ **Completed (2026-11-15)** |

@@ -79,10 +79,22 @@ ML queue/
 │   └── api/                                   # REST API & ML Serving Application
 │       ├── apps.py                            # Server boot preloader (WaitTimePredictor singleton)
 │       ├── ml_service.py                      # Thread-safe dual-engine inference service
-│       ├── views.py                           # ApiRootView, PredictWaitTimeView (GET & POST)
-│       ├── urls.py                            # /api/predict/ route registration
-│       ├── models.py                          # Relational database models (Phase 6)
+│       ├── views.py                           # ApiRootView, PredictWaitTimeView, IssueTicketView, CallNextTicketView, QueueStatusView
+│       ├── urls.py                            # Route registrations (/api/predict/, /api/tickets/, /api/queue/)
+│       ├── models.py                          # Relational ORM models (Service, Counter, Ticket, PredictionLog)
+│       ├── admin.py                           # Django Admin with color-coded MLOps drift badges
 │       └── wait_time_rf_model.joblib          # Resident model artifact for low-latency inference
+│
+├── queue_frontend/                            # Vite + React Frontend Application (Phase 8)
+│   ├── package.json                           # Dependencies (React 19, Axios, Lucide-React, Canvas-Confetti)
+│   ├── src/
+│   │   ├── api.js                             # Centralized Axios client targeting DRF backend
+│   │   ├── components/
+│   │   │   ├── StudentKiosk.jsx               # Self-service kiosk (ACC, ADM, EXM, GEN), confetti & print slip
+│   │   │   ├── TellerScreen.jsx               # Counter desk console (1-4) with |W_q - Ŵ_q| drift audit
+│   │   │   └── PublicDisplay.jsx              # Waiting room TV monitor with "Now Calling" board
+│   │   ├── App.jsx                            # Main application view & navigation shell
+│   │   └── index.css                          # Modern responsive theme & ticket pass card styles
 │
 ├── data/                                      # Queue datasets and data dictionary
 │   ├── verified_queue_waiting_time_dataset.csv # Primary verified dataset (12,017 records, Oct 2026)
@@ -198,3 +210,15 @@ curl -X POST http://127.0.0.1:8000/api/predict/ \
   -H "Content-Type: application/json" \
   -d '{"queue_length": 8, "hour_of_day": 14, "day_of_week": 1, "active_counters": 2}'
 ```
+
+---
+
+### 4. Start React Frontend (`queue_frontend`)
+```powershell
+# Open a new terminal and navigate to frontend
+cd queue_frontend
+
+# Start Vite development server
+npm run dev
+```
+*Open **[http://localhost:5173/](http://localhost:5173/)** to access the Student Self-Service Kiosk, withdraw tokens with live ML wait predictions, and trigger celebratory confetti animations.*

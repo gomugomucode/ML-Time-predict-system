@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-15) - feat: implement Student Self-Service Kiosk with dynamic service counters, canvas-confetti, and printable digital ticket token pass
 PENDING (2026-11-15) - fix: resolve ReferenceError in TellerScreen and prevent UNIQUE constraint collision on ticket issuance across days
 PENDING (2026-11-14) - feat: scaffold Vite React frontend (queue_frontend) with Student Kiosk, Teller Desk, Public TV Display, and live queue status endpoint
 PENDING (2026-11-14) - fix: resolve format_html TypeError in PredictionLogAdmin by utilizing mark_safe for static badges
@@ -35,6 +36,38 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-15: Student Self-Service Kiosk UI, Confetti Animation & Printable Pass Card
+- **Type:** Frontend Architecture, Interactive UX & Visual Animation (`feat` / `ui`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_frontend/package.json`: Installed `canvas-confetti` package.
+  - `queue_frontend/src/components/StudentKiosk.jsx`: Implemented full self-service kiosk with 4 college account services (`ACC`, `ADM`, `EXM`, `GEN`), celebratory confetti animation upon issuance, printable digital pass card, and real-time waiting metric cards.
+  - `queue_frontend/src/index.css`: Added responsive two-column grid layout, touch-friendly service selection cards, live token header with badges, and ticket print slip styles.
+  - `queue_frontend/src/App.jsx`: Mounted the dedicated Student Kiosk view.
+- **Problem Statement & Motivation:**
+  - Campus account desks require a modern, zero-friction interface for incoming students to register their arrival, pick a transaction category, and view an accurate wait-time estimation computed dynamically by the Random Forest model.
+- **Detailed What Was Added & Implemented:**
+  - **Department Categories:**
+    - `ACC`: Tuition & Semester Fee (Fast Track)
+    - `ADM`: Admissions & Clearance (Standard)
+    - `EXM`: Exam & Transcript Verification (Standard)
+    - `GEN`: General Inquiries (Quick)
+  - **Dynamic Issuance & Confetti Feedback:**
+    - Sends `POST /api/tickets/issue/` with selected service code.
+    - Triggers particle confetti burst on success via `canvas-confetti`.
+    - Handles connection failures with a clean error alert.
+  - **Digital Ticket Pass Card:**
+    - Live token display with status badge and token number (e.g. `ACC-023`, `ADM-001`).
+    - Two-column metric row: Ahead in Queue count and ML Estimated Wait Time in minutes.
+    - Issued timestamp and print slip action (`window.print()`).
+  - **Empty State Placeholder:**
+    - Intuitive placeholder illustration when no token has been withdrawn yet.
+- **Verification & Build:**
+  - Recompiled frontend via `npm run build` in 281ms with zero errors.
+  - Verified backend API response across all four services (`ACC`, `ADM`, `EXM`, `GEN`), confirming HTTP 201 Created and unique monotonic token issuance.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-15: Fix `W is not defined` ReferenceError & Ticket Token Uniqueness Integrity
 - **Type:** Bug Fix, Frontend Robustness & Database Concurrency (`fix` / `frontend` / `backend`)

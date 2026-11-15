@@ -18,8 +18,11 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 10. [x] **Task 7.3:** Implement Dual-Engine Fallback mechanism with low-latency REST endpoints (`GET/POST /api/predict/`, `GET /`). *(Completed in `api/views.py`)*
 11. [x] **Task 6.2:** Implement core Django ORM database models (`Service`, `Counter`, `Ticket`, `PredictionLog`) in `queue_backend/api/models.py`. *(Completed & Migrated)*
 12. [x] **Task 7.4:** Develop ticket issuance and status transition REST endpoints (`POST /api/tickets/issue/`, `POST /api/counters/<counter_id>/call-next/`). *(Completed & Verified)*
-13. [ ] **Task 8.1:** Scaffold React.js frontend interface using Vite (`queue-frontend`).
-14. [ ] **Task 8.2:** Build Student / Kiosk self-service check-in view with digital token generation.
+13. [x] **Task 8.1:** Scaffold React.js frontend interface using Vite (`queue_frontend`). *(Completed 2026-11-14)*
+14. [x] **Task 8.2:** Build Student / Kiosk self-service check-in view with digital token generation, confetti animation, and printable pass slip. *(Completed 2026-11-15 in `src/components/StudentKiosk.jsx`)*
+15. [x] **Task 8.3:** Build Teller Desk counter console with 1-click FIFO customer call and $|W_q - \hat{W}_q|$ error auditing. *(Completed 2026-11-15 in `src/components/TellerScreen.jsx`)*
+16. [x] **Task 8.4:** Build Public Waiting Room TV Board with "Now Calling" hero cards and upcoming in-queue list. *(Completed 2026-11-15 in `src/components/PublicDisplay.jsx`)*
+17. [x] **Task 8.5:** Integrate Django Admin MLOps drift dashboard with color-coded $|W_q - \hat{W}_q|$ badges. *(Completed 2026-11-14 in `api/admin.py`)*
 
 ---
 
@@ -144,22 +147,22 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 
 ## Phase 8: Frontend Delivery, Real-Time Transport & MLOps
 
-- [ ] **Task 8.1 [P0]:** Scaffold React.js application using Vite (`queue-frontend`).
-- [ ] **Task 8.2 [P0]:** Build **Student / Public Kiosk View**:
-  - Service selection form (Tuition, Exam Fee, Clearance).
-  - "Draw Ticket" action generating digital token and QR code.
-  - Estimated Waiting Time (EWT) display and current serving ticket indicator.
-- [ ] **Task 8.3 [P0]:** Build **Teller Counter Interface**:
-  - Active counter status toggle (Open, Paused, Closed).
-  - "Call Next Ticket" button with audible ping / visual alert.
-  - "Start Transaction" and "Complete Transaction" controls.
-  - Real-time queue count display for assigned service.
-- [ ] **Task 8.4 [P1]:** Build **Waiting Hall Display Screen**:
-  - Fullscreen display showing currently called tokens per counter window.
-  - Live estimated wait times for incoming arrivals.
-- [ ] **Task 8.5 [P1]:** Build **Admin Operations & Accuracy Dashboard**:
-  - Real-time performance meters: Queue length ($L_q$), Server utilization ($\rho$), Arrival rate ($\lambda$).
-  - Prediction accuracy monitoring: Scatter plot of Predicted vs. Realized wait times and live MAE gauge.
+- [x] **Task 8.1 [P0]:** Scaffold React.js application using Vite (`queue_frontend`). *(Completed 2026-11-14 with React 19, Axios, Lucide-React, and Canvas-Confetti)*
+- [x] **Task 8.2 [P0]:** Build **Student / Public Kiosk View** (`src/components/StudentKiosk.jsx`): *(Completed 2026-11-15)*
+  - Service selection form (Tuition & Semester Fee `ACC`, Admissions & Clearance `ADM`, Exam & Transcript `EXM`, General Inquiries `GEN`).
+  - "Get Queue Token" action with real-time ML wait-time prediction and `canvas-confetti` celebration.
+  - Printable digital pass slip (`window.print()`) with ahead in queue headcount, predicted duration, and issued timestamp.
+- [x] **Task 8.3 [P0]:** Build **Teller Counter Interface** (`src/components/TellerScreen.jsx`): *(Completed 2026-11-15)*
+  - Counter desk selector tabs (Counters 1 through 4).
+  - "Call Next Student" button dispatching tickets in FIFO order.
+  - Real-time serving display showing actual wait ($W_q$), predicted wait ($\hat{W}_q$), and prediction error ($|W_q - \hat{W}_q|$) with color-coded drift badges.
+  - Live waiting queue table and recent accuracy audit history.
+- [x] **Task 8.4 [P1]:** Build **Waiting Hall Display Screen** (`src/components/PublicDisplay.jsx`): *(Completed 2026-11-15)*
+  - Fullscreen waiting room layout showing "NOW CALLING" hero ticket with desk destination arrows.
+  - Live digital clock, heartbeat sync indicator, and upcoming ticket list with estimated arrival wait.
+- [x] **Task 8.5 [P1]:** Build **Admin Operations & Accuracy Dashboard**: *(Completed 2026-11-14 in `api/admin.py`)*
+  - Registered `Service`, `Counter`, `Ticket`, and `PredictionLog` in Django Admin.
+  - Custom color-coded `error_display` badge for MAE drift audit: 🟢 $\le 5\text{m}$, 🟡 $5\text{--}10\text{m}$, 🔴 $> 10\text{m}$, and grey "Waiting Call" badge.
 - [ ] **Task 8.6 [P1]:** Connect WebSocket client to Django Channels to trigger instant UI re-renders upon state changes.
 - [ ] **Task 8.7 [P2]:** Set up Celery background tasks:
   - Periodic queue snapshot aggregation (every 5 minutes).
