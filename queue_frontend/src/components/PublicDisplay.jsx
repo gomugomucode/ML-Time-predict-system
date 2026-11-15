@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Volume2, VolumeX, Users, Clock, MonitorPlay, Radio } from 'lucide-react';
+import { Volume2, VolumeX, Users, Clock, MonitorPlay, Radio, Wifi, WifiOff } from 'lucide-react';
+import { useQueueSocket } from '../useQueueSocket';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
@@ -13,7 +14,7 @@ export default function PublicDisplay() {
   // Synthesize voice announcement with audio chime
   const announceTicket = (ticketNumber, counterNumber) => {
     if (!audioEnabled || !('speechSynthesis' in window)) return;
-    
+
     // Play quick chime sound via AudioContext
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -42,32 +43,65 @@ export default function PublicDisplay() {
     }, 350);
   };
 
-  // Poll backend every 2.5 seconds
+  const processQueueData = (data, announce = true) => {
+    if (!data) return;
+    setQueueData({
+      now_serving: data.now_serving || [],
+      upcoming: data.upcoming || [],
+      total_waiting: data.total_waiting ?? (data.upcoming ? data.upcoming.length : 0),
+    });
+
+    if (announce && data.now_serving && data.now_serving.length > 0) {
+      const latest = data.now_serving[0];
+      if (latest && latest.ticket_number && latest.ticket_number !== lastAnnouncedTicket.current) {
+        if (lastAnnouncedTicket.current !== null) {
+          announceTicket(latest.ticket_number, latest.counter_number);
+        }
+        lastAnnouncedTicket.current = latest.ticket_number;
+      }
+    }
+  };
+
+  // Real-time WebSocket connection
+  const handleWebSocketMessage = (data) => {
+    if (data && (data.type === 'QUEUE_STATE_CHANGED' || data.now_serving)) {
+      processQueueData(data, true);
+    }
+  };
+
+  const { isConnected } = useQueueSocket(handleWebSocketMessage);
+
+  // Initial HTTP fetch on mount to load immediate state
   useEffect(() => {
-    const fetchStatus = async () => {
+    const fetchInitial = async () => {
       try {
         const res = await axios.get(`${API_BASE}/queue/status/`);
-        setQueueData(res.data);
-
-        // Check if there is a new called ticket to announce
+        processQueueData(res.data, false);
         if (res.data.now_serving && res.data.now_serving.length > 0) {
-          const latest = res.data.now_serving[0];
-          if (latest && latest.ticket_number !== lastAnnouncedTicket.current) {
-            if (lastAnnouncedTicket.current !== null) {
-              announceTicket(latest.ticket_number, latest.counter_number);
-            }
-            lastAnnouncedTicket.current = latest.ticket_number;
-          }
+          lastAnnouncedTicket.current = res.data.now_serving[0].ticket_number;
         }
       } catch (err) {
-        console.error('Failed to fetch public queue status', err);
+        console.error('Failed to fetch initial public queue status', err);
       }
     };
+    fetchInitial();
+  }, []);
 
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 2500);
-    return () => clearInterval(interval);
-  }, [audioEnabled]);
+  // Graceful fallback polling only if WebSocket is disconnected
+  useEffect(() => {
+    if (isConnected) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/queue/status/`);
+        processQueueData(res.data, true);
+      } catch (err) {
+        console.warn('Fallback poll error:', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(pollInterval);
+  }, [isConnected]);
 
   // Live clock
   useEffect(() => {
@@ -88,7 +122,13 @@ export default function PublicDisplay() {
         </div>
 
         <div className="top-controls">
+          <div className={`ws-badge ${isConnected ? 'ws-connected' : 'ws-disconnected'}`}>
+            {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+            <span>{isConnected ? 'Real-Time Sync' : 'Reconnecting...'}</span>
+          </div>
+
           <div className="live-clock">{currentTime}</div>
+
           <button 
             onClick={() => setAudioEnabled(!audioEnabled)} 
             className={`audio-btn ${audioEnabled ? 'active' : ''}`}

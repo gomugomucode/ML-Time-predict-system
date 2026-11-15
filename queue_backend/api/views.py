@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.request import Request
@@ -270,6 +272,9 @@ class IssueTicketView(APIView):
             inference_latency_ms=latency_ms,
         )
 
+        # Broadcast live queue state to all connected WebSocket clients
+        broadcast_queue_state()
+
         return Response(
             {
                 "status": "success",
@@ -329,6 +334,9 @@ class CallNextTicketView(APIView):
             else None
         )
 
+        # Broadcast live queue state to all connected WebSocket clients
+        broadcast_queue_state()
+
         return Response(
             {
                 "status": "success",
@@ -342,6 +350,114 @@ class CallNextTicketView(APIView):
         )
 
 
+def get_queue_state_data() -> dict[str, Any]:
+    """
+    Assembles a complete snapshot of current queue state across waiting,
+    in-service, and resolved tickets for WebSockets and REST polling fallback.
+    """
+    waiting_tickets = Ticket.objects.filter(status="waiting").order_by("created_at")
+    serving_tickets = (
+        Ticket.objects.filter(status="in_service")
+        .select_related("counter")
+        .order_by("-called_at")
+    )
+    recent_resolved = (
+        PredictionLog.objects.filter(resolved_at__isnull=False)
+        .select_related("ticket")
+        .order_by("-resolved_at")[:5]
+    )
+
+    # Public Display formats:
+    now_serving = [
+        {
+            "ticket_number": t.ticket_number,
+            "counter_number": t.counter.counter_number if t.counter else 1,
+            "called_at": t.called_at.strftime("%H:%M:%S") if t.called_at else "",
+        }
+        for t in serving_tickets[:4]
+    ]
+    upcoming = [
+        {
+            "ticket_number": t.ticket_number,
+            "service_code": t.service.code,
+            "estimated_wait_minutes": t.predicted_wait_minutes,
+            "created_at": t.created_at.strftime("%H:%M") if t.created_at else "",
+        }
+        for t in waiting_tickets[:6]
+    ]
+
+    # Teller & Dashboard formats:
+    waiting_list = [
+        {
+            "ticket_number": t.ticket_number,
+            "service_code": t.service.code,
+            "predicted_wait_minutes": t.predicted_wait_minutes,
+            "created_at": t.created_at.strftime("%H:%M:%S"),
+        }
+        for t in waiting_tickets[:10]
+    ]
+    currently_serving = [
+        {
+            "ticket_number": t.ticket_number,
+            "counter": t.counter.counter_number if t.counter else None,
+            "called_at": (
+                t.called_at.strftime("%H:%M:%S") if t.called_at else None
+            ),
+        }
+        for t in serving_tickets[:5]
+    ]
+    recent_accuracy = [
+        {
+            "ticket_number": log.ticket.ticket_number,
+            "predicted": log.predicted_wait_minutes,
+            "actual": log.actual_wait_minutes,
+            "error": log.absolute_error,
+            "resolved_at": (
+                log.resolved_at.strftime("%H:%M:%S")
+                if log.resolved_at
+                else None
+            ),
+        }
+        for log in recent_resolved
+    ]
+
+    return {
+        "type": "QUEUE_STATE_CHANGED",
+        # Public Waiting Board keys:
+        "now_serving": now_serving,
+        "upcoming": upcoming,
+        "total_waiting": waiting_tickets.count(),
+        # Console & Dashboard keys:
+        "waiting_count": waiting_tickets.count(),
+        "serving_count": serving_tickets.count(),
+        "open_counters": Counter.objects.filter(is_open=True).count(),
+        "waiting_list": waiting_list,
+        "currently_serving": currently_serving,
+        "recent_accuracy": recent_accuracy,
+    }
+
+
+def broadcast_queue_state() -> None:
+    """
+    Broadcasts the updated queue state to the Django Channels 'queue_updates' group.
+    Fails silently so WebSocket network issues do not interrupt HTTP transactions.
+    """
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            payload = get_queue_state_data()
+            async_to_sync(channel_layer.group_send)(
+                "queue_updates",
+                {
+                    "type": "queue_event",
+                    "payload": payload,
+                },
+            )
+    except Exception as e:
+        # Non-blocking log
+        print(f"[WebSocket Broadcast Error] {e}")
+
+
 class QueueStatusView(APIView):
     """
     GET /api/queue/status/
@@ -349,85 +465,4 @@ class QueueStatusView(APIView):
     """
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        waiting_tickets = Ticket.objects.filter(status="waiting").order_by("created_at")
-        serving_tickets = (
-            Ticket.objects.filter(status="in_service")
-            .select_related("counter")
-            .order_by("-called_at")
-        )
-        recent_resolved = (
-            PredictionLog.objects.filter(resolved_at__isnull=False)
-            .select_related("ticket")
-            .order_by("-resolved_at")[:5]
-        )
-
-        # Public Display formats:
-        now_serving = [
-            {
-                "ticket_number": t.ticket_number,
-                "counter_number": t.counter.counter_number if t.counter else 1,
-                "called_at": t.called_at.strftime("%H:%M:%S") if t.called_at else "",
-            }
-            for t in serving_tickets[:4]
-        ]
-        upcoming = [
-            {
-                "ticket_number": t.ticket_number,
-                "service_code": t.service.code,
-                "estimated_wait_minutes": t.predicted_wait_minutes,
-                "created_at": t.created_at.strftime("%H:%M") if t.created_at else "",
-            }
-            for t in waiting_tickets[:6]
-        ]
-
-        # Teller & Dashboard formats:
-        waiting_list = [
-            {
-                "ticket_number": t.ticket_number,
-                "service_code": t.service.code,
-                "predicted_wait_minutes": t.predicted_wait_minutes,
-                "created_at": t.created_at.strftime("%H:%M:%S"),
-            }
-            for t in waiting_tickets[:10]
-        ]
-        currently_serving = [
-            {
-                "ticket_number": t.ticket_number,
-                "counter": t.counter.counter_number if t.counter else None,
-                "called_at": (
-                    t.called_at.strftime("%H:%M:%S") if t.called_at else None
-                ),
-            }
-            for t in serving_tickets[:5]
-        ]
-        recent_accuracy = [
-            {
-                "ticket_number": log.ticket.ticket_number,
-                "predicted": log.predicted_wait_minutes,
-                "actual": log.actual_wait_minutes,
-                "error": log.absolute_error,
-                "resolved_at": (
-                    log.resolved_at.strftime("%H:%M:%S")
-                    if log.resolved_at
-                    else None
-                ),
-            }
-            for log in recent_resolved
-        ]
-
-        return Response(
-            {
-                # Public Waiting Board keys:
-                "now_serving": now_serving,
-                "upcoming": upcoming,
-                "total_waiting": waiting_tickets.count(),
-                # Console & Dashboard keys:
-                "waiting_count": waiting_tickets.count(),
-                "serving_count": serving_tickets.count(),
-                "open_counters": Counter.objects.filter(is_open=True).count(),
-                "waiting_list": waiting_list,
-                "currently_serving": currently_serving,
-                "recent_accuracy": recent_accuracy,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(get_queue_state_data(), status=status.HTTP_200_OK)

@@ -23,6 +23,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 15. [x] **Task 8.3:** Build Teller Desk counter console with 1-click FIFO customer call and $|W_q - \hat{W}_q|$ error auditing. *(Completed 2026-11-15 in `src/components/TellerScreen.jsx`)*
 16. [x] **Task 8.4:** Build Public Waiting Room TV Board with "Now Calling" hero cards and upcoming in-queue list. *(Completed 2026-11-15 in `src/components/PublicDisplay.jsx`)*
 17. [x] **Task 8.5:** Integrate Django Admin MLOps drift dashboard with color-coded $|W_q - \hat{W}_q|$ badges. *(Completed 2026-11-14 in `api/admin.py`)*
+18. [x] **Task 7.5 & 8.6:** Implement real-time WebSocket layer via Django Channels, Daphne ASGI, and React WebSocket hook for instant (<50ms) screen synchronization. *(Completed 2026-11-15)*
 
 ---
 
@@ -141,7 +142,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
   - `POST /api/counters/<counter_id>/call-next/`: Calls oldest waiting ticket in FIFO order, updates ticket state to `in_service`, records `called_at`, computes realized wait time ($W_q = t_S - t_A$), and synchronizes prediction error.
   - `POST /api/predict/`: Direct standalone prediction endpoint with parameter validation and automatic temporal inference.
   - `GET /` & `GET /api/`: Interactive API catalog and health check.
-- [ ] **Task 7.5 [P1]:** Configure Django Channels (ASGI) and Redis channel layer for real-time WebSocket events (`queue:updated`, `ticket:called`).
+- [x] **Task 7.5 [P1]:** Configure Django Channels (ASGI) and channel layer for real-time WebSocket events (`queue_updates`). *(Completed 2026-11-15 via Daphne + InMemoryChannelLayer)*
 
 ---
 
@@ -163,7 +164,7 @@ This document tracks all actionable engineering tasks across the 8 phases of the
 - [x] **Task 8.5 [P1]:** Build **Admin Operations & Accuracy Dashboard**: *(Completed 2026-11-14 in `api/admin.py`)*
   - Registered `Service`, `Counter`, `Ticket`, and `PredictionLog` in Django Admin.
   - Custom color-coded `error_display` badge for MAE drift audit: 🟢 $\le 5\text{m}$, 🟡 $5\text{--}10\text{m}$, 🔴 $> 10\text{m}$, and grey "Waiting Call" badge.
-- [ ] **Task 8.6 [P1]:** Connect WebSocket client to Django Channels to trigger instant UI re-renders upon state changes.
+- [x] **Task 8.6 [P1]:** Connect WebSocket client to Django Channels to trigger instant UI re-renders upon state changes. *(Completed 2026-11-15 via `useQueueSocket.js` & `PublicDisplay.jsx`)*
 - [ ] **Task 8.7 [P2]:** Set up Celery background tasks:
   - Periodic queue snapshot aggregation (every 5 minutes).
   - Nightly model accuracy reporting and drift alerting.

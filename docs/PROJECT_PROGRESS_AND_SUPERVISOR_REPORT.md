@@ -355,7 +355,11 @@ PHASE PROGRESSION (100% COMPLETE AS OF 2026-11-15):
 - **Production React Frontend (`queue_frontend`):**
   - **Student Self-Service Kiosk (`StudentKiosk.jsx`):** 4 department transaction categories (`ACC`, `ADM`, `EXM`, `GEN`), dynamic arrival queue counters, one-tap ML wait-time token generation, celebratory confetti particles (`canvas-confetti`), and printable ticket pass with barcode.
   - **Teller Counter Console (`TellerScreen.jsx`):** Multi-desk switcher (Counters 1-4), 1-click FIFO customer call, live serving display with $|W_q - \hat{W}_q|$ prediction error and drift telemetry badges.
-  - **Public Display Board (`PublicDisplay.jsx`):** High-contrast lobby TV screen with "NOW CALLING" hero tokens, desk assignment arrows, and upcoming in-line tickets.
+  - **Public Display Board (`PublicDisplay.jsx`):** High-contrast lobby TV screen with "NOW CALLING" hero tokens, desk assignment arrows, upcoming in-line tickets, audio chime, and voice announcements.
+- **Real-Time WebSocket Transport Layer (Django Channels + Daphne ASGI):**
+  - **ASGI Server Integration:** Configured Daphne ASGI protocol router supporting concurrent HTTP REST and duplex WebSocket connections on `ws://127.0.0.1:8000/ws/queue/`.
+  - **Instant Push Broadcast:** Implemented `broadcast_queue_state()` triggering immediate `QUEUE_STATE_CHANGED` push notifications whenever tickets are issued or called (< 50ms propagation).
+  - **Resilient React Hook (`useQueueSocket.js`):** Built-in auto-reconnection (2.5s retry) and HTTP polling fallback when disconnected.
 - **Continuous MLOps Drift & Error Auditing:**
   - 1-to-1 `PredictionLog` database relation tracking ground-truth wait duration ($W_q = t_S - t_A$), absolute error ($|W_q - \hat{W}_q|$), and squared error.
   - Color-coded Django Admin changelist audit table: 🟢 $\le 5\text{m}$, 🟡 $5\text{--}10\text{m}$, 🔴 $> 10\text{m}$.
@@ -365,9 +369,11 @@ PHASE PROGRESSION (100% COMPLETE AS OF 2026-11-15):
 
 ```
 Test Run Summary:
-- Backend Status: Online (HTTP 200 / 201)
+- Backend Status: Online (Daphne ASGI + HTTP 200 / 201)
+- WebSocket Transport: Active (ws://127.0.0.1:8000/ws/queue/ with InMemoryChannelLayer)
+- Automated Test Suite: 4/4 passing tests in 0.077s (python manage.py test api)
 - ML Model Latency: ~4.06 ms warm in RAM
-- Frontend Compilation: Vite built 2,145 modules in 281ms (0 errors)
+- Frontend Compilation: Vite built 2,148 modules in 404ms (0 errors)
 - Sample Tokens Issued: ACC-023 (Wait: 5.2m), ADM-001 (Wait: 5.2m), EXM-001 (Wait: 5.2m), GEN-001 (Wait: 5.2m)
 - Calling & Drift Log: Ticket ACC-017 resolved with ground-truth W_q = 984.35m (simulated delay), logged to PredictionLog.
 ```

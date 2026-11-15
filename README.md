@@ -71,15 +71,18 @@ ML queue/
 ├── main.py                                    # Python data ingestion, training & evaluation pipeline
 ├── wait_time_rf_model.joblib                  # Serialized Random Forest model artifact (33.3 MB)
 │
-├── queue_backend/                             # Django REST Framework Backend Application
+├── queue_backend/                             # Django REST Framework & Daphne ASGI Backend
 │   ├── manage.py                              # Django management script
 │   ├── queue_backend/                         # Project settings & URL routing
-│   │   ├── settings.py                        # CORS, DRF, and installed apps configuration
+│   │   ├── settings.py                        # CORS, DRF, Channels, and Daphne configuration
+│   │   ├── asgi.py                            # ASGI ProtocolTypeRouter (HTTP + WebSocket)
 │   │   └── urls.py                            # Root routing (/, /api/, /admin/)
-│   └── api/                                   # REST API & ML Serving Application
+│   └── api/                                   # REST API, WebSockets & ML Serving Application
 │       ├── apps.py                            # Server boot preloader (WaitTimePredictor singleton)
 │       ├── ml_service.py                      # Thread-safe dual-engine inference service
-│       ├── views.py                           # ApiRootView, PredictWaitTimeView, IssueTicketView, CallNextTicketView, QueueStatusView
+│       ├── consumers.py                       # WebSocket QueueConsumer for push events
+│       ├── routing.py                         # ASGI WebSocket route mapping (ws/queue/)
+│       ├── views.py                           # API endpoints with broadcast_queue_state() hooks
 │       ├── urls.py                            # Route registrations (/api/predict/, /api/tickets/, /api/queue/)
 │       ├── models.py                          # Relational ORM models (Service, Counter, Ticket, PredictionLog)
 │       ├── admin.py                           # Django Admin with color-coded MLOps drift badges
@@ -89,12 +92,13 @@ ML queue/
 │   ├── package.json                           # Dependencies (React 19, Axios, Lucide-React, Canvas-Confetti)
 │   ├── src/
 │   │   ├── api.js                             # Centralized Axios client targeting DRF backend
+│   │   ├── useQueueSocket.js                  # Native WebSocket hook with auto-reconnection
 │   │   ├── components/
 │   │   │   ├── StudentKiosk.jsx               # Self-service kiosk (ACC, ADM, EXM, GEN), confetti & print slip
 │   │   │   ├── TellerScreen.jsx               # Counter desk console (1-4) with |W_q - Ŵ_q| drift audit
-│   │   │   └── PublicDisplay.jsx              # Waiting room TV monitor with "Now Calling" board
+│   │   │   └── PublicDisplay.jsx              # Waiting room TV monitor with instant WebSocket sync & chime
 │   │   ├── App.jsx                            # Main application view & navigation shell
-│   │   └── index.css                          # Modern responsive theme & ticket pass card styles
+│   │   └── index.css                          # Modern responsive theme, board grid & WebSocket status badges
 │
 ├── data/                                      # Queue datasets and data dictionary
 │   ├── verified_queue_waiting_time_dataset.csv # Primary verified dataset (12,017 records, Oct 2026)

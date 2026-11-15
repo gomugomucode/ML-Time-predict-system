@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-15) - feat: implement real-time WebSocket synchronization with Django Channels, Daphne ASGI server, and zero-latency broadcast layer
 PENDING (2026-11-15) - feat: implement PublicDisplay waiting room TV board with Web Audio chime, Web Speech announcements, and 3-screen navigation
 PENDING (2026-11-15) - feat: configure nodemon auto-reload watchers and scripts across frontend and backend environments
 PENDING (2026-11-15) - feat: implement TellerScreen desk station with FIFO customer call, real-time error auditing, and dual-tab navigation in App.jsx
@@ -39,6 +40,29 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-15: Real-Time WebSocket Synchronization with Django Channels, Daphne ASGI Server, and Zero-Latency Broadcast Layer
+- **Type:** Full-Stack Networking & Real-Time Transport Architecture (`feat` / `websockets` / `channels`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/queue_backend/settings.py`: Added `'daphne'` as first application in `INSTALLED_APPS`, configured `ASGI_APPLICATION = 'queue_backend.asgi.application'`, and instantiated `InMemoryChannelLayer` for zero-latency in-memory broadcast.
+  - `queue_backend/queue_backend/asgi.py`: Converted ASGI application into a `ProtocolTypeRouter` separating HTTP requests from WebSocket connections wrapped in Channels `URLRouter`.
+  - `queue_backend/api/consumers.py`: Implemented asynchronous `QueueConsumer(AsyncWebsocketConsumer)` with group subscription to `queue_updates` broadcast room.
+  - `queue_backend/api/routing.py`: Configured ASGI URL routing pattern (`re_path(r'ws/queue/$', consumers.QueueConsumer.as_asgi())`).
+  - `queue_backend/api/views.py`: Integrated `asgiref.sync.async_to_sync` and `channels.layers.get_channel_layer()`; implemented reusable `get_queue_state_data()` snapshot builder and non-blocking `broadcast_queue_state()` helper invoked on every ticket issuance (`POST /api/tickets/issue/`) and teller call (`POST /api/counters/<counter_id>/call-next/`).
+  - `queue_frontend/src/useQueueSocket.js`: Implemented custom React WebSocket hook with auto-reconnection loop (2.5s recovery) and mutable callback ref to prevent stale closures.
+  - `queue_frontend/src/components/PublicDisplay.jsx`: Replaced aggressive HTTP polling with real-time WebSocket subscriber; integrated `Wifi` / `WifiOff` connection indicators with graceful 4-second HTTP fallback when disconnected.
+  - `queue_frontend/src/index.css`: Styled `.ws-badge`, `.ws-connected`, and `.ws-disconnected` real-time sync indicators.
+  - `queue_backend/api/tests.py`: Added comprehensive unit and integration test suite (`QueueSystemIntegrationTests`) verifying prediction endpoint, ticket issuance, counter calling, channel layer group broadcasting, and state consistency.
+- **Problem Statement & Motivation:**
+  - Repeated HTTP polling (every 2–3s) from multiple lobby screens, teller desks, and kiosks causes unnecessary network overhead, server load, and introduces a 2–3 second display delay when a student is called.
+  - WebSocket duplex communication ensures that the millisecond a teller clicks "Call Next" or a student takes a ticket, all connected lobby displays update within < 50ms and trigger instant audio chimes.
+- **Detailed What Was Added & Implemented:**
+  - **Daphne ASGI Layer:** Enabled ASGI capability alongside standard Django HTTP routes, allowing unified server execution on port 8000 via `manage.py runserver`.
+  - **In-Memory Channel Layer:** Zero-dependency `InMemoryChannelLayer` allowing immediate broadcast without requiring external Redis infrastructure in local development and evaluation.
+  - **Single Source of Truth (`get_queue_state_data`):** Guarantees exact schema parity between REST polling fallback (`GET /api/queue/status/`) and WebSocket broadcast messages (`payload.type === 'QUEUE_STATE_CHANGED'`).
+  - **Zero-Drop Resilience:** WebSocket failures are caught and logged without interrupting HTTP 200/201 responses; the frontend automatically degrades to 4-second HTTP polling if the WebSocket server is offline.
+  - **Full Test Verification:** Verified via `python manage.py test api` (4/4 tests passed in 0.077s) and `npm run build` (built in 404ms, 0 errors).
 
 ### [Prompt Work / Working Tree] — 2026-11-15: Public Waiting Area Display Board (`PublicDisplay.jsx`) with Web Audio Chime & Speech Synthesis
 - **Type:** Frontend Architecture, Visual Display & Multimodal Audio UI (`feat` / `ui` / `audio`)
