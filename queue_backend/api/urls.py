@@ -4,12 +4,14 @@ from api.views import (
     CallNextTicketView,
     IssueTicketView,
     PredictWaitTimeView,
+    QueueStatusView,
 )
 
 urlpatterns = [
     path("", ApiRootView.as_view(), name="api_root"),
     path("predict/", PredictWaitTimeView.as_view(), name="predict_wait_time"),
     path("tickets/issue/", IssueTicketView.as_view(), name="issue_ticket"),
+    path("queue/status/", QueueStatusView.as_view(), name="queue_status"),
     path(
         "tickets/call/<int:counter_id>/",
         CallNextTicketView.as_view(),

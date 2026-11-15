@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-14) - feat: scaffold Vite React frontend (queue_frontend) with Student Kiosk, Teller Desk, Public TV Display, and live queue status endpoint
 PENDING (2026-11-14) - fix: resolve format_html TypeError in PredictionLogAdmin by utilizing mark_safe for static badges
 PENDING (2026-11-14) - feat: implement 1-to-1 PredictionLog drift tracking, record_ground_truth error computation, and color-coded Django Admin error audit
 PENDING (2026-11-14) - test: implement multi-ticket queue arrival and teller service simulation suite (test_tickets.py) with dual-route URL support
@@ -33,6 +34,35 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-14: React Frontend (`queue_frontend`) & Live Queue Status API
+- **Type:** Frontend Architecture, UI/UX Implementation & Real-time Integration (`feat` / `ui` / `api`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/api/views.py`: Implemented `QueueStatusView` (`GET /api/queue/status/`) returning waiting depth, active serving tickets, and recent drift audit telemetry.
+  - `queue_backend/api/urls.py`: Registered `/api/queue/status/` route.
+  - `queue_frontend/`: Scaffolded Vite + React application with `axios` and `lucide-react`.
+  - `queue_frontend/src/api.js`: Created centralized API client targeting Django backend at `http://127.0.0.1:8000/api`.
+  - `queue_frontend/src/components/StudentKiosk.jsx`: Touch-ready department selection, real-time arrival queue count, instant ML token generation, and digital printable ticket pass.
+  - `queue_frontend/src/components/TellerScreen.jsx`: Multi-counter console (Counters 1-4), 1-click FIFO customer call, live serving display with $|W_q - \hat{W}_q|$ prediction error and drift telemetry badges.
+  - `queue_frontend/src/components/PublicDisplay.jsx`: Public waiting room TV screen with split "Now Calling" hero cards and "Upcoming in Queue" cards.
+  - `queue_frontend/src/App.jsx`: Main navigation shell with live backend health monitor, 1-click end-to-end quick simulation, and admin shortcut.
+  - `queue_frontend/src/index.css`: Modern styling with glassmorphism, ticket cut-out notches, responsive grids, and high-contrast TV board.
+- **Problem Statement & Motivation:**
+  - In a production university or hospital deployment, end-users do not interact directly with raw REST API endpoints or Django Admin changelists.
+  - Students need an intuitive self-service kiosk to select services and immediately receive a transparent estimated wait time powered by the Random Forest model.
+  - Service staff need an operational console to call customers in strict FIFO order, observe realized wait durations, and detect potential model drift in real time.
+  - Waiting customers in the lobby require a public digital TV display showing current calls and desk assignments.
+- **Detailed What Was Added & Implemented:**
+  - **Live Queue API (`QueueStatusView`):** Exposes `waiting_count`, `serving_count`, `open_counters`, `waiting_list`, `currently_serving`, and `recent_accuracy` logs.
+  - **Student Kiosk (`StudentKiosk.jsx`):** Allows selecting from multiple departments (Accounting, Registrar, Financial Aid, Academic Advising), fetches queue status, issues tokens, and renders a printable ticket pass with barcode and ML wait estimate.
+  - **Teller Screen (`TellerScreen.jsx`):** Enables desk switching (Counters 1-4), calls oldest ticket, displays actual wait duration, predicted wait duration, and absolute prediction error with color-coded badges ($\le 5\text{m}$ Green, $5\text{--}10\text{m}$ Yellow, $> 10\text{m}$ Red).
+  - **Public Waiting Board (`PublicDisplay.jsx`):** Displays real-time clock, flashing "Now Calling" hero ticket with directional arrow to desk number, and upcoming queue list.
+  - **Quick Sim Utility:** Built-in 1-click simulation directly in the navbar to issue two student tickets and call one to verify end-to-end functionality in 2 seconds.
+- **Verification & Build:**
+  - Executed `npm run build` in `queue_frontend/`, compiling 2,147 modules in 345ms into optimized production bundle (`dist/index.html` 0.46 kB, `dist/assets/index-DIWvLPO6.css` 19.55 kB, `dist/assets/index-DPdp_Nhh.js` 306.56 kB) with zero errors.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-14: Fix `format_html` TypeError in `PredictionLogAdmin`
 - **Type:** Bug Fix & Admin UI Stability (`fix` / `admin`)

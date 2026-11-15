@@ -32,6 +32,7 @@ class ApiRootView(APIView):
                     "call_next_ticket": request.build_absolute_uri(
                         "/api/counters/1/call-next/"
                     ),
+                    "queue_status": request.build_absolute_uri("/api/queue/status/"),
                     "predict_wait_time": request.build_absolute_uri("/api/predict/"),
                     "admin_dashboard": request.build_absolute_uri("/admin/"),
                 },
@@ -328,6 +329,65 @@ class CallNextTicketView(APIView):
                 "actual_wait_minutes": next_ticket.actual_wait_minutes,
                 "predicted_wait_minutes": next_ticket.predicted_wait_minutes,
                 "prediction_error_minutes": prediction_error,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class QueueStatusView(APIView):
+    """
+    GET /api/queue/status/
+    Returns real-time queue overview: waiting count, currently serving tickets,
+    recent resolution errors for drift monitoring, and open counters.
+    """
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        waiting_tickets = Ticket.objects.filter(status="waiting").order_by("created_at")
+        serving_tickets = Ticket.objects.filter(status="in_service").order_by("-called_at")
+        recent_resolved = (
+            PredictionLog.objects.filter(resolved_at__isnull=False)
+            .select_related("ticket")
+            .order_by("-resolved_at")[:5]
+        )
+
+        return Response(
+            {
+                "waiting_count": waiting_tickets.count(),
+                "serving_count": serving_tickets.count(),
+                "open_counters": Counter.objects.filter(is_open=True).count(),
+                "waiting_list": [
+                    {
+                        "ticket_number": t.ticket_number,
+                        "service_code": t.service.code,
+                        "predicted_wait_minutes": t.predicted_wait_minutes,
+                        "created_at": t.created_at.strftime("%H:%M:%S"),
+                    }
+                    for t in waiting_tickets[:10]
+                ],
+                "currently_serving": [
+                    {
+                        "ticket_number": t.ticket_number,
+                        "counter": t.counter.counter_number if t.counter else None,
+                        "called_at": (
+                            t.called_at.strftime("%H:%M:%S") if t.called_at else None
+                        ),
+                    }
+                    for t in serving_tickets[:5]
+                ],
+                "recent_accuracy": [
+                    {
+                        "ticket_number": log.ticket.ticket_number,
+                        "predicted": log.predicted_wait_minutes,
+                        "actual": log.actual_wait_minutes,
+                        "error": log.absolute_error,
+                        "resolved_at": (
+                            log.resolved_at.strftime("%H:%M:%S")
+                            if log.resolved_at
+                            else None
+                        ),
+                    }
+                    for log in recent_resolved
+                ],
             },
             status=status.HTTP_200_OK,
         )
