@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-15) - fix: resolve ReferenceError in TellerScreen and prevent UNIQUE constraint collision on ticket issuance across days
 PENDING (2026-11-14) - feat: scaffold Vite React frontend (queue_frontend) with Student Kiosk, Teller Desk, Public TV Display, and live queue status endpoint
 PENDING (2026-11-14) - fix: resolve format_html TypeError in PredictionLogAdmin by utilizing mark_safe for static badges
 PENDING (2026-11-14) - feat: implement 1-to-1 PredictionLog drift tracking, record_ground_truth error computation, and color-coded Django Admin error audit
@@ -34,6 +35,30 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-15: Fix `W is not defined` ReferenceError & Ticket Token Uniqueness Integrity
+- **Type:** Bug Fix, Frontend Robustness & Database Concurrency (`fix` / `frontend` / `backend`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_frontend/src/components/TellerScreen.jsx`: Removed LaTeX `{W}` expression inside JSX subtitle (`$\hat{W}_q$`) which caused `ReferenceError: W is not defined`.
+  - `queue_backend/api/views.py`: Fixed ticket token generation in `IssueTicketView` to dynamically resolve the highest existing sequence number per service rather than restarting from 1 every midnight, resolving `sqlite3.IntegrityError: UNIQUE constraint failed: api_ticket.ticket_number`.
+- **Problem Statement & Root Cause:**
+  1. **Frontend Crash (`ReferenceError: W is not defined`):**
+     - In `queue_frontend/src/components/TellerScreen.jsx`, line 184 rendered `($\hat{W}_q$)`.
+     - The JSX / SWC compiler interprets any substring enclosed in `{...}` as a JavaScript expression. The curly braces in `\hat{W}` caused React to look for a JavaScript variable named `W`, throwing `Uncaught ReferenceError: W is not defined` and crashing the `<TellerScreen>` component tree.
+  2. **Backend 500 Error (`POST /api/tickets/issue/`):**
+     - In `api/views.py`, ticket number was derived using `today_start = timezone.now().replace(hour=0, minute=0, second=0)` and counting tickets created today.
+     - When the calendar day advanced from Nov 14 to Nov 15, the count of tickets created today reset to 0, attempting to issue token `ACC-001`.
+     - Because `Ticket.ticket_number` has a global `unique=True` database constraint and `ACC-001` already existed from the previous day, SQLite threw `IntegrityError: UNIQUE constraint failed: api_ticket.ticket_number`, resulting in an unhandled HTTP 500 Internal Server Error.
+- **Detailed Solution & Implementation:**
+  - **Frontend:** Updated `TellerScreen.jsx` to replace LaTeX expressions with standard JSX HTML subscript elements `(W<sub>actual</sub>)` and `(W<sub>predicted</sub>)`.
+  - **Backend:** Updated `IssueTicketView.post()` in `api/views.py` to inspect the highest existing ticket suffix for the given service (e.g. `ACC-017` -> next `ACC-018`) and added a collision-avoidance `while` loop guarantee.
+- **Verification & Testing:**
+  - Recompiled frontend via `npm run build` in 426ms with zero errors.
+  - Executed ticket issuance simulation issuing tickets `ACC-018`, `ACC-019`, and `ACC-020` with HTTP 201 Created and zero SQLite collision exceptions.
+  - Successfully called ticket `ACC-017` to Counter 1.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-14: React Frontend (`queue_frontend`) & Live Queue Status API
 - **Type:** Frontend Architecture, UI/UX Implementation & Real-time Integration (`feat` / `ui` / `api`)

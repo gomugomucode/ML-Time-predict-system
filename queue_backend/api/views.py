@@ -231,13 +231,21 @@ class IssueTicketView(APIView):
         engine_used = pred_res["engine"]
         latency_ms = pred_res["latency_ms"]
 
-        # 4. Generate Ticket Token (e.g. ACC-001)
-        today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        daily_ticket_count = (
-            Ticket.objects.filter(service=service, created_at__gte=today_start).count()
-            + 1
-        )
-        ticket_number = f"{service.code}-{daily_ticket_count:03d}"
+        # 4. Generate unique monotonic Ticket Token (e.g. ACC-001, ACC-002, ...)
+        last_ticket = Ticket.objects.filter(service=service).order_by("-id").first()
+        if last_ticket and "-" in last_ticket.ticket_number:
+            try:
+                last_num = int(last_ticket.ticket_number.split("-")[-1])
+                next_num = last_num + 1
+            except ValueError:
+                next_num = Ticket.objects.filter(service=service).count() + 1
+        else:
+            next_num = Ticket.objects.filter(service=service).count() + 1
+
+        ticket_number = f"{service.code}-{next_num:03d}"
+        while Ticket.objects.filter(ticket_number=ticket_number).exists():
+            next_num += 1
+            ticket_number = f"{service.code}-{next_num:03d}"
 
         # 5. Save ticket
         ticket = Ticket.objects.create(

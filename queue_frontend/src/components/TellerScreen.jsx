@@ -173,7 +173,7 @@ export default function TellerScreen({ onTicketCalled }) {
                     <span className="tile-value highlight">
                       {lastCalled.actual_wait_minutes ?? '0.0'} min
                     </span>
-                    <span className="tile-sub">Realized time in queue ($W_q$)</span>
+                    <span className="tile-sub">Realized queue duration (W<sub>actual</sub>)</span>
                   </div>
 
                   <div className="audit-tile">
@@ -181,7 +181,7 @@ export default function TellerScreen({ onTicketCalled }) {
                     <span className="tile-value">
                       {lastCalled.predicted_wait_minutes ?? '0.0'} min
                     </span>
-                    <span className="tile-sub">Estimated at arrival ($\hat{W}_q$)</span>
+                    <span className="tile-sub">Arrival ML estimate (W<sub>predicted</sub>)</span>
                   </div>
 
                   <div className="audit-tile full-width">
