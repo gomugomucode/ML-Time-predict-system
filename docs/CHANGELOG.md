@@ -7,6 +7,8 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-15) - feat: implement PublicDisplay waiting room TV board with Web Audio chime, Web Speech announcements, and 3-screen navigation
+PENDING (2026-11-15) - feat: configure nodemon auto-reload watchers and scripts across frontend and backend environments
 PENDING (2026-11-15) - feat: implement TellerScreen desk station with FIFO customer call, real-time error auditing, and dual-tab navigation in App.jsx
 PENDING (2026-11-15) - feat: implement Student Self-Service Kiosk with dynamic service counters, canvas-confetti, and printable digital ticket token pass
 PENDING (2026-11-15) - fix: resolve ReferenceError in TellerScreen and prevent UNIQUE constraint collision on ticket issuance across days
@@ -37,6 +39,52 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-15: Public Waiting Area Display Board (`PublicDisplay.jsx`) with Web Audio Chime & Speech Synthesis
+- **Type:** Frontend Architecture, Visual Display & Multimodal Audio UI (`feat` / `ui` / `audio`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/api/views.py`: Extended `QueueStatusView` (`GET /api/queue/status/`) to return normalized `now_serving`, `upcoming`, and `total_waiting` payloads alongside legacy keys.
+  - `queue_frontend/src/components/PublicDisplay.jsx`: Implemented public TV waiting board with 2.5-second automated polling, Web Audio API frequency chime (D5 $\to$ A5), and Web Speech API announcement (`"Token ACC-001, please proceed to Counter 1"`).
+  - `queue_frontend/src/index.css`: Added TV-optimized dark theme (`#0f172a`), pulsing "NOW SERVING" hero cards, and waiting list rows with rank pills.
+  - `queue_frontend/src/App.jsx`: Updated navigation header to support all 3 core operational screens (Student Kiosk, Teller Desk, and Public Display Board).
+- **Problem Statement & Motivation:**
+  - In college account sections, waiting halls, and clinics, waiting students require a high-visibility wall monitor displaying active counter calls, upcoming waiting numbers, and audible speech announcements so they do not miss their service window.
+- **Detailed What Was Added & Implemented:**
+  - **Live Queue Polling:** Polls `GET /api/queue/status/` every 2,500ms to keep the board synchronized with real-time arrivals and counter calls.
+  - **Synthesized Audio Chime:** Utilizes HTML5 `AudioContext` to construct a 2-tone melodic chime ($587.33\text{ Hz} \to 880\text{ Hz}$) with exponential gain decay prior to the voice call.
+  - **Text-to-Speech Engine:** Native `SpeechSynthesisUtterance` announcement triggered when the latest served token transitions.
+  - **Display Board Layout:**
+    - Top header: Live flashing red pulse beacon, real-time clock, and one-click audio mute/enable toggle.
+    - Left column: 2x2 grid of "NOW SERVING" cards with counter badges and glowing pulse animation on the newest call.
+    - Right column: Next in line queue list with rank badge, ticket number, and predicted wait duration in green.
+- **Verification & Build:**
+  - Frontend compiled via `npm run build` in 351ms with 0 errors.
+  - Verified live 3-screen pipeline: ticket `ACC-027` issued, observed in `upcoming` on Public Display, called to Counter 1 (`EXM-031`), and verified arrival in `now_serving`.
+
+---
+
+### [Prompt Work / Working Tree] — 2026-11-15: Nodemon Hot Auto-Reloading Configuration
+- **Type:** Developer Experience & Process Tooling (`feat` / `tooling`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_frontend/package.json`: Installed `nodemon` dev dependency and added `"watch": "nodemon"` and `"backend:watch"` scripts.
+  - `queue_frontend/nodemon.json`: Configured file watcher for `src/` directory (`js,jsx,css,html,json`).
+  - `nodemon.json` (root): Added root watcher configuration for Django backend file changes (`queue_backend/api`, `queue_backend/queue_backend`).
+- **Problem Statement & Motivation:**
+  - Fast feedback loops during frontend UI styling and backend endpoint modifications require automated process reloading so developers do not need to manually stop and restart terminal processes.
+- **Detailed What Was Added & Implemented:**
+  - **Frontend Watcher:**
+    - Installed `nodemon` in `queue_frontend`.
+    - Added `npm run watch` command targeting Vite with automated file monitoring.
+    - Note: Vite's built-in Hot Module Replacement (HMR) also updates JSX/CSS components in real-time in the browser without full page reloads.
+  - **Backend Watcher:**
+    - Django's `python manage.py runserver` uses `StatReloader` by default.
+    - Added a `nodemon` execution option to monitor and auto-restart the Django server across all `.py` files.
+- **Verification & Build:**
+  - Tested build via `npm run build` with zero errors.
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-15: Teller Screen Component (`TellerScreen.jsx`), Live Error Auditing & Dual-Tab Navigation
 - **Type:** Frontend Architecture, Operational Console & Live Interactive Integration (`feat` / `ui`)

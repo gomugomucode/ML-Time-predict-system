@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "watch": "nodemon",
+    "backend:watch": "nodemon --watch ../queue_backend -e py --exec \"python ../queue_backend/manage.py runserver\"",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -20,6 +22,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "nodemon": "^3.1.14",
     "oxlint": "^1.90.0",
     "vite": "^8.3.6"
   }

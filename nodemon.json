@@ -1,0 +1,16 @@
+{
+  "watch": [
+    "queue_backend/api",
+    "queue_backend/queue_backend"
+  ],
+  "ext": "py,html",
+  "ignore": [
+    "*.sqlite3",
+    "*.sqlite3-journal",
+    "*/__pycache__/*",
+    "queue_frontend/node_modules/*",
+    ".venv/*"
+  ],
+  "exec": "powershell -Command \"cd queue_backend; python manage.py runserver\"",
+  "delay": "300"
+}

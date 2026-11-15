@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import StudentKiosk from './components/StudentKiosk';
 import TellerScreen from './components/TellerScreen';
-import { User, MonitorCheck } from 'lucide-react';
+import PublicDisplay from './components/PublicDisplay';
+import { User, MonitorCheck, Tv } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('kiosk');
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', background: activeTab === 'display' ? '#020617' : '#f8fafc', transition: 'background 0.2s' }}>
       {/* Navigation Header */}
       <nav style={navStyle}>
         <div style={navBrandStyle}>
@@ -34,12 +35,24 @@ export default function App() {
           >
             <MonitorCheck size={16} /> Teller Desk
           </button>
+          <button
+            onClick={() => setActiveTab('display')}
+            style={{
+              ...tabBtnStyle,
+              background: activeTab === 'display' ? '#0284c7' : 'transparent',
+              color: activeTab === 'display' ? '#ffffff' : '#64748b',
+            }}
+          >
+            <Tv size={16} /> Public Display Board
+          </button>
         </div>
       </nav>
 
       {/* Main View Area */}
-      <main>
-        {activeTab === 'kiosk' ? <StudentKiosk /> : <TellerScreen />}
+      <main style={{ padding: '20px' }}>
+        {activeTab === 'kiosk' && <StudentKiosk />}
+        {activeTab === 'teller' && <TellerScreen />}
+        {activeTab === 'display' && <PublicDisplay />}
       </main>
     </div>
   );

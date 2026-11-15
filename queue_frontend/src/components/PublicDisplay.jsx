@@ -1,115 +1,153 @@
-import React, { useState, useEffect } from 'react';
-import { Tv, Users, Clock, ArrowRight, BellRing } from 'lucide-react';
-import { api } from '../api';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { Volume2, VolumeX, Users, Clock, MonitorPlay, Radio } from 'lucide-react';
+
+const API_BASE = 'http://127.0.0.1:8000/api';
 
 export default function PublicDisplay() {
-  const [queueStatus, setQueueStatus] = useState(null);
+  const [queueData, setQueueData] = useState({ now_serving: [], upcoming: [], total_waiting: 0 });
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const lastAnnouncedTicket = useRef(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchStatus = async () => {
+  // Synthesize voice announcement with audio chime
+  const announceTicket = (ticketNumber, counterNumber) => {
+    if (!audioEnabled || !('speechSynthesis' in window)) return;
+    
+    // Play quick chime sound via AudioContext
     try {
-      const data = await api.getQueueStatus();
-      setQueueStatus(data);
-    } catch (err) {
-      console.error('Display sync error:', err);
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    } catch (e) {
+      console.warn('AudioContext failed', e);
     }
+
+    // Voice announcement after short chime
+    setTimeout(() => {
+      const speech = new SpeechSynthesisUtterance(
+        `Token ${ticketNumber}, please proceed to Counter ${counterNumber}`
+      );
+      speech.rate = 0.9;
+      speech.pitch = 1.0;
+      window.speechSynthesis.speak(speech);
+    }, 350);
   };
 
+  // Poll backend every 2.5 seconds
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    const fetchStatus = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/queue/status/`);
+        setQueueData(res.data);
 
-  const activeCalls = queueStatus?.currently_serving ?? [];
-  const waitingList = queueStatus?.waiting_list ?? [];
+        // Check if there is a new called ticket to announce
+        if (res.data.now_serving && res.data.now_serving.length > 0) {
+          const latest = res.data.now_serving[0];
+          if (latest && latest.ticket_number !== lastAnnouncedTicket.current) {
+            if (lastAnnouncedTicket.current !== null) {
+              announceTicket(latest.ticket_number, latest.counter_number);
+            }
+            lastAnnouncedTicket.current = latest.ticket_number;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch public queue status', err);
+      }
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 2500);
+    return () => clearInterval(interval);
+  }, [audioEnabled]);
+
+  // Live clock
+  useEffect(() => {
+    const clock = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(clock);
+  }, []);
 
   return (
     <div className="display-board-container">
-      {/* Top TV Header Bar */}
-      <div className="display-header">
-        <div className="display-branding">
-          <Tv size={26} />
+      {/* Top Banner */}
+      <div className="display-board-top">
+        <div className="top-title">
+          <Radio size={24} className="live-dot" />
           <div>
-            <h1>CAMPUS SERVICE CENTER</h1>
-            <p>Live Queue Status & Now Calling Board</p>
+            <h1>College Account Section — Live Queue Board</h1>
+            <p>Please watch for your token number and listen for the announcement.</p>
           </div>
         </div>
-        <div className="display-clock-box">
+
+        <div className="top-controls">
           <div className="live-clock">{currentTime}</div>
-          <div className="live-pulse">
-            <span className="pulse-dot"></span> LIVE
-          </div>
+          <button 
+            onClick={() => setAudioEnabled(!audioEnabled)} 
+            className={`audio-btn ${audioEnabled ? 'active' : ''}`}
+            title="Enable voice chime"
+          >
+            {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            <span>{audioEnabled ? 'Chime ON' : 'Chime Muted'}</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Split Display Screen */}
-      <div className="display-main-grid">
-        {/* Left: Now Serving Hero Section */}
-        <div className="now-calling-column">
-          <div className="column-title">
-            <BellRing className="bell-shake" size={24} />
-            <h2>NOW CALLING / IN SERVICE</h2>
+      {/* Main Grid: Now Serving vs Upcoming Line */}
+      <div className="display-board-grid">
+        {/* Left Side: Large Now Serving Grid */}
+        <div className="serving-section">
+          <div className="section-title">
+            <MonitorPlay size={20} />
+            <h2>NOW SERVING</h2>
           </div>
 
-          <div className="now-calling-cards">
-            {activeCalls.length > 0 ? (
-              activeCalls.map((call, idx) => (
-                <div key={call.ticket_number} className={`calling-card ${idx === 0 ? 'calling-hero' : ''}`}>
-                  <div className="calling-token-section">
-                    <span className="calling-tag">TICKET</span>
-                    <span className="calling-token-num">{call.ticket_number}</span>
-                  </div>
-                  <div className="calling-arrow">
-                    <ArrowRight size={36} />
-                  </div>
-                  <div className="calling-dest-section">
-                    <span className="calling-dest-label">PLEASE PROCEED TO</span>
-                    <span className="calling-dest-counter">DESK {call.counter ?? 1}</span>
-                  </div>
+          <div className="serving-cards-grid">
+            {queueData.now_serving.length > 0 ? (
+              queueData.now_serving.map((item, idx) => (
+                <div key={idx} className={`now-serving-card ${idx === 0 ? 'pulse' : ''}`}>
+                  <div className="counter-badge">Counter {item.counter_number}</div>
+                  <div className="ticket-hero">{item.ticket_number}</div>
+                  <div className="called-time">Called at {item.called_at}</div>
                 </div>
               ))
             ) : (
-              <div className="no-calls-card">
-                <Clock size={48} />
-                <p>All service counters are currently ready for next students.</p>
+              <div className="no-active-serving">
+                <h3>Counters Ready</h3>
+                <p>Waiting for the next ticket to be called.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right: Upcoming Tickets in Line */}
-        <div className="upcoming-column">
-          <div className="column-title">
-            <Users size={24} />
-            <h2>UPCOMING IN QUEUE ({queueStatus?.waiting_count ?? 0})</h2>
+        {/* Right Side: Upcoming Waiting List */}
+        <div className="upcoming-section">
+          <div className="section-title">
+            <Users size={20} />
+            <h2>NEXT IN LINE ({queueData.total_waiting} WAITING)</h2>
           </div>
 
-          <div className="upcoming-cards-list">
-            {waitingList.length > 0 ? (
-              waitingList.slice(0, 7).map((ticket, idx) => (
-                <div key={ticket.ticket_number} className="upcoming-card">
-                  <div className="upcoming-rank">#{idx + 1}</div>
-                  <div className="upcoming-token">
-                    <strong>{ticket.ticket_number}</strong>
-                    <span className="dept-tag">{ticket.service_code}</span>
-                  </div>
-                  <div className="upcoming-wait">
-                    <Clock size={16} />
-                    <span>~{ticket.predicted_wait_minutes} min wait</span>
+          <div className="upcoming-list">
+            {queueData.upcoming.length > 0 ? (
+              queueData.upcoming.map((t, idx) => (
+                <div key={idx} className="upcoming-row">
+                  <div className="upcoming-pos">#{idx + 1}</div>
+                  <div className="upcoming-ticket">{t.ticket_number}</div>
+                  <div className="upcoming-time">
+                    <Clock size={14} /> ~{t.estimated_wait_minutes} min wait
                   </div>
                 </div>
               ))
             ) : (
-              <div className="upcoming-empty">
-                <p>No waiting tickets currently in queue.</p>
+              <div className="empty-upcoming">
+                <p>Queue is currently empty. Next arrival will be served immediately!</p>
               </div>
             )}
           </div>
