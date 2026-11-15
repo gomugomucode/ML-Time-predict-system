@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-15) - feat: implement TellerScreen desk station with FIFO customer call, real-time error auditing, and dual-tab navigation in App.jsx
 PENDING (2026-11-15) - feat: implement Student Self-Service Kiosk with dynamic service counters, canvas-confetti, and printable digital ticket token pass
 PENDING (2026-11-15) - fix: resolve ReferenceError in TellerScreen and prevent UNIQUE constraint collision on ticket issuance across days
 PENDING (2026-11-14) - feat: scaffold Vite React frontend (queue_frontend) with Student Kiosk, Teller Desk, Public TV Display, and live queue status endpoint
@@ -36,6 +37,27 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-15: Teller Screen Component (`TellerScreen.jsx`), Live Error Auditing & Dual-Tab Navigation
+- **Type:** Frontend Architecture, Operational Console & Live Interactive Integration (`feat` / `ui`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_frontend/src/components/TellerScreen.jsx`: Implemented Teller Desk console with counter station dropdown (Counters 1-3), "Call Next Token" FIFO dispatcher, active serving card, and live error metrics grid ($W_q$, $\hat{W}$, $|W_q - \hat{W}|$).
+  - `queue_frontend/src/index.css`: Added teller desk layout styles, active serving card, animated bell indicator, and call history audit sidebar.
+  - `queue_frontend/src/App.jsx`: Implemented clean dual-tab navigation header to toggle between Student Kiosk and Teller Desk.
+- **Problem Statement & Motivation:**
+  - Staff operating service desks need an intuitive interface to call students, track counter assignments, view realized waiting durations, and instantly assess ML model accuracy and prediction variance.
+- **Detailed What Was Added & Implemented:**
+  - **Counter Station Switcher:** Allows staff to select active desk (Counter 1 Accounts, Counter 2 Tuition/Cash, Counter 3 Clearance).
+  - **FIFO Ticket Calling:** Dispatches `POST /api/tickets/call/<counter_id>/`, transitions ticket to `in_service`, and calculates ground-truth waiting duration $W_q = t_S - t_A$.
+  - **Accuracy & Drift Inspection:** Displays actual wait duration, original ML prediction, and color-coded error badges (🟢 $\le 5\text{m}$ High Accuracy, 🟡 $5\text{--}10\text{m}$ Acceptable, 🔴 $> 10\text{m}$ High Error).
+  - **Session Call History:** Maintains an active session log of the last 5 called tickets with individual error metrics.
+  - **Navigation Shell (`App.jsx`):** Allows instant tab toggling between the Student Kiosk and Teller Desk without refreshing.
+- **Verification & Build:**
+  - Recompiled frontend via `npm run build` in 312ms with zero errors.
+  - Verified live interactive loop: issued ticket `ACC-026` via Kiosk API, called `ADM-001` via Teller API, achieving ground-truth verification ($W_q = 6.79\text{ min}$, $\hat{W}_q = 5.2\text{ min}$, Error: $\pm 1.59\text{ min}$, High Accuracy).
+
+---
 
 ### [Prompt Work / Working Tree] — 2026-11-15: Student Self-Service Kiosk UI, Confetti Animation & Printable Pass Card
 - **Type:** Frontend Architecture, Interactive UX & Visual Animation (`feat` / `ui`)
