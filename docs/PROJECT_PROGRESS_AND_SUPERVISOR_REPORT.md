@@ -6,7 +6,7 @@
 > **Author & Lead Developer:** Anupam Baral ([@gomugomucode](https://github.com/gomugomucode))  
 > **Target Audience:** Academic Supervisor, Project Evaluator & External Reviewer  
 > **Project Phase:** Phases 1 through 8 Completed (100% Full-Stack Operational Readiness); End-to-End System Live  
-> **Report Generation Date:** November 15, 2026  
+> **Report Generation Date:** November 16, 2026 (Updated with Live Browser Verification Telemetry)  
 > **Overall Architecture Readiness:** 🟢 **Production-Ready Full-Stack System (Vite React + DRF Serving + Live MLOps Drift Auditing)**
 
 ---
@@ -365,17 +365,25 @@ PHASE PROGRESSION (100% COMPLETE AS OF 2026-11-15):
   - Color-coded Django Admin changelist audit table: 🟢 $\le 5\text{m}$, 🟡 $5\text{--}10\text{m}$, 🔴 $> 10\text{m}$.
 - **Documentation & Audit Trail:** Exhaustive tracking in [`docs/AUDIT.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/docs/AUDIT.md), [`docs/CHANGELOG.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/docs/CHANGELOG.md), [`docs/PLAN.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/docs/PLAN.md), and [`TASKS.md`](file:///c:/Users/Anupam%20Baral/Desktop/ML%20queue/TASKS.md).
 
-### 8.2 Production Verification Telemetry (Measured 2026-11-15)
+### 8.2 Production Verification Telemetry (Updated 2026-11-16)
 
 ```
 Test Run Summary:
-- Backend Status: Online (Daphne ASGI + HTTP 200 / 201)
+- Backend Status: Online (Daphne ASGI + DRF HTTP 200 / 201)
 - WebSocket Transport: Active (ws://127.0.0.1:8000/ws/queue/ with InMemoryChannelLayer)
 - Automated Test Suite: 4/4 passing tests in 0.077s (python manage.py test api)
-- ML Model Latency: ~4.06 ms warm in RAM
-- Frontend Compilation: Vite built 2,148 modules in 404ms (0 errors)
-- Sample Tokens Issued: ACC-023 (Wait: 5.2m), ADM-001 (Wait: 5.2m), EXM-001 (Wait: 5.2m), GEN-001 (Wait: 5.2m)
-- Calling & Drift Log: Ticket ACC-017 resolved with ground-truth W_q = 984.35m (simulated delay), logged to PredictionLog.
+- Live Browser Verification: Complete end-to-end multi-screen walkthrough verified via automated Chrome DevTools agent (0 console errors, session recording saved)
+- Frontend Build: Vite built 2,148 modules in 335ms (0 errors)
+- Sample Tokens Issued & Verified:
+  * ACC-029: Issued at Kiosk (Queue ahead: 0, ML EWT: ~0.34 min, Random Forest Engine)
+- FIFO Calling & Drift Log Verified:
+  * Served token: ACC-029 to Counter 1 (Accounts)
+  * ACC-029 Ground-Truth W_q = 0.23 min, ML Prediction = 0.34 min, Error = ±0.11 min ("High Accuracy < 5m")
+- Public Display Synchronization:
+  * Live WebSocket Connection: Verified active ("Real-Time Sync" badge)
+  * NOW SERVING Hero Card: Counter 1 displaying ACC-029 (Called at 04:09:38)
+  * Upcoming Queue: Progressed dynamically to NEXT IN LINE (0 WAITING)
+  * Multimodal Audio: Web Audio chime toggle switched from "Chime Muted" to "Chime ON"
 ```
 
 ---

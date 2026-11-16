@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-16) - test: complete end-to-end live Chrome DevTools verification across Kiosk, Teller Desk, and Public Display Board with recording capture
 PENDING (2026-11-15) - feat: implement real-time WebSocket synchronization with Django Channels, Daphne ASGI server, and zero-latency broadcast layer
 PENDING (2026-11-15) - feat: implement PublicDisplay waiting room TV board with Web Audio chime, Web Speech announcements, and 3-screen navigation
 PENDING (2026-11-15) - feat: configure nodemon auto-reload watchers and scripts across frontend and backend environments
