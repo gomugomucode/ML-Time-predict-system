@@ -88,10 +88,14 @@ class WaitTimePredictor:
                     cls._instance = cls()
         return cls._instance
 
-    def load_model(self) -> bool:
+    def load_model(self, auto_train: bool = True) -> bool:
         """
         Search candidate directories and load the serialized Joblib model into RAM.
-        Returns True if successfully loaded, False otherwise.
+        If `wait_time_rf_model.joblib` is missing and `auto_train=True`, automatically
+        trains the deterministic RandomForestRegressor from the bundled CSV datasets,
+        saves it to `queue_backend/api/wait_time_rf_model.joblib`, and loads it into RAM.
+
+        Returns True if an ML model is loaded and ready, False if falling back to AST.
         """
         with self._lock:
             for path in CANDIDATE_MODEL_PATHS:
@@ -105,6 +109,40 @@ class WaitTimePredictor:
                         return True
                     except Exception as err:
                         logger.error("Failed to load model from %s: %s", path, err, exc_info=True)
+
+            # Auto-bootstrap: train from CSV datasets if no serialized .joblib exists
+            if auto_train:
+                try:
+                    from api.ml_trainer import train_and_save_model
+
+                    target_path = CANDIDATE_MODEL_PATHS[0]
+                    logger.warning(
+                        "Model artifact 'wait_time_rf_model.joblib' not found. "
+                        "Auto-training RandomForestRegressor from CSV datasets into %s...",
+                        target_path,
+                    )
+                    print(
+                        ">>> [ML Service] 'wait_time_rf_model.joblib' not found. "
+                        "Auto-training RandomForestRegressor from dataset..."
+                    )
+                    trained_model, metrics, saved_path = train_and_save_model(
+                        output_path=target_path,
+                        verbose=False,
+                    )
+                    self.model = trained_model
+                    self.model_path = saved_path
+                    self._is_loaded = True
+                    print(
+                        f">>> [ML Service] Auto-training complete! Saved to '{saved_path}' "
+                        f"(MAE: {metrics['mae']:.2f} min, R2: {metrics['r2']:.4f})."
+                    )
+                    return True
+                except Exception as train_err:
+                    logger.error(
+                        "Auto-training failed (%s). Falling back to Analytical AST mode.",
+                        train_err,
+                        exc_info=True,
+                    )
 
             logger.warning(
                 "Model file 'wait_time_rf_model.joblib' not found in candidate paths: %s. "

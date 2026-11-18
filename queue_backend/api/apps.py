@@ -14,6 +14,11 @@ class ApiConfig(AppConfig):
         import sys
 
         # Prevent double-loading in the outer watchdog process of Django runserver
+        # and skip preloading during schema/training management commands
+        skip_commands = {"train_model", "makemigrations", "migrate", "collectstatic"}
+        if any(arg in skip_commands for arg in sys.argv):
+            return
+
         is_runserver = any("runserver" in arg for arg in sys.argv)
         is_reloader_parent = (
             is_runserver
