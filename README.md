@@ -68,8 +68,7 @@ ML queue/
 ├── TASKS.md                                   # Actionable Task Checklist with priorities and checkboxes
 ├── WORK_BREAKDOWN_SCHEDULE.md                 # Formal WBS (1.0 - 8.0), Gantt schedule, and effort allocation
 ├── README.md                                  # Workspace overview and quickstart guide
-├── main.py                                    # Python data ingestion, training & evaluation pipeline
-├── wait_time_rf_model.joblib                  # Serialized Random Forest model artifact (33.3 MB)
+├── wait_time_rf_model.joblib                  # Optional root model artifact (auto-trained inside queue_backend/api/ if absent)
 │
 ├── queue_backend/                             # Django REST Framework & Daphne ASGI Backend
 │   ├── manage.py                              # Django management script
@@ -79,7 +78,9 @@ ML queue/
 │   │   └── urls.py                            # Root routing (/, /api/, /admin/)
 │   └── api/                                   # REST API, WebSockets & ML Serving Application
 │       ├── apps.py                            # Server boot preloader (WaitTimePredictor singleton)
-│       ├── ml_service.py                      # Thread-safe dual-engine inference service
+│       ├── ml_trainer.py                      # Canonical CSV ingestion, RandomForest training & .joblib export
+│       ├── ml_service.py                      # Thread-safe dual-engine inference service (auto-trains if .joblib missing)
+│       ├── management/commands/train_model.py # Django CLI command: `python manage.py train_model`
 │       ├── consumers.py                       # WebSocket QueueConsumer for push events
 │       ├── routing.py                         # ASGI WebSocket route mapping (ws/queue/)
 │       ├── views.py                           # API endpoints with broadcast_queue_state() hooks
@@ -156,22 +157,23 @@ ML queue/
 - ⏱️ **Wait Times Log:** [`data/wait_times.csv`](data/wait_times.csv) *(Multi-day logs)*
 - 📗 **Data Dictionary:** [`data/DataDictionary.xlsx`](data/DataDictionary.xlsx) *(Schema metadata)*
 
-### 🐍 Codebase Scripts
-- 🐍 **Data Ingestion & Exploration Script:** [`main.py`](main.py)
+### 🐍 Codebase Training Pipeline
+- 🐍 **Django ML Training Module:** [`queue_backend/api/ml_trainer.py`](queue_backend/api/ml_trainer.py)
+- ⚙️ **Django Management Command:** [`queue_backend/api/management/commands/train_model.py`](queue_backend/api/management/commands/train_model.py)
 
 ---
 
 ## ⚡ Quickstart & How to Run
 
-### 1. Run Data Ingestion & Model Training Pipeline (`main.py`)
+### 1. Train (or Auto-Train) the ML Model (`queue_backend`)
 ```powershell
 # Activate local virtual environment
 .venv\Scripts\activate
 
-# Train Random Forest Regressor and evaluate against Historical Mean baseline
-python main.py
+# (Optional) Manually train Random Forest Regressor and print benchmark metrics
+python queue_backend/manage.py train_model
 ```
-*Evaluates 14,545 records, computes baseline MAE ($59.09\text{ min}$) vs RF MAE ($9.68\text{ min}$), achieving an **83.62% accuracy gain**, and serializes the model to `wait_time_rf_model.joblib`.*
+*Evaluates 14,545 records, computes baseline MAE ($59.09\text{ min}$) vs RF MAE ($9.68\text{ min}$), achieving an **83.62% accuracy gain**, and serializes the model to `queue_backend/api/wait_time_rf_model.joblib`. Note: If `wait_time_rf_model.joblib` is missing on a fresh clone, Django automatically runs this training pipeline on startup!*
 
 ---
 

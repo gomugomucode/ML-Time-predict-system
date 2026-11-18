@@ -26,4 +26,4 @@ This folder maintains an exhaustive operational audit of the codebase, tracking 
 - 📊 **Work Breakdown Schedule (WBS):** [`../WORK_BREAKDOWN_SCHEDULE.md`](../WORK_BREAKDOWN_SCHEDULE.md)
 - 🔬 **Queueing Research Papers & Specs:** [`../research/README.md`](../research/README.md)
 - 📈 **Primary Verified Dataset:** [`../data/verified_queue_waiting_time_dataset.csv`](../data/verified_queue_waiting_time_dataset.csv)
-- 🐍 **Data Ingestion Script:** [`../main.py`](../main.py)
+- 🐍 **Django ML Training Pipeline:** [`../queue_backend/api/ml_trainer.py`](../queue_backend/api/ml_trainer.py)

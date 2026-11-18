@@ -7,6 +7,7 @@ All notable changes, refactors, architectural decisions, and documentation addit
 ## 📅 Chronological Version History
 
 ```
+PENDING (2026-11-18) - feat: move ML training pipeline into Django backend (api/ml_trainer.py), add manage.py train_model command, and auto-train when wait_time_rf_model.joblib is missing
 PENDING (2026-11-16) - test: complete end-to-end live Chrome DevTools verification across Kiosk, Teller Desk, and Public Display Board with recording capture
 PENDING (2026-11-15) - feat: implement real-time WebSocket synchronization with Django Channels, Daphne ASGI server, and zero-latency broadcast layer
 PENDING (2026-11-15) - feat: implement PublicDisplay waiting room TV board with Web Audio chime, Web Speech announcements, and 3-screen navigation
@@ -41,6 +42,20 @@ f12b122 (2026-10-16) - refactor: comment out dataframe column printing loop in m
 ---
 
 ## 🔍 Detailed Change Log by Release / Commit
+
+### [Prompt Work / Working Tree] — 2026-11-18: Self-Contained Django ML Training Pipeline & Zero-Artifact Auto-Bootstrap
+- **Type:** ML Pipeline Architecture & Backend Portability (`feat` / `mlops` / `refactor`)
+- **Author:** gomugomucode
+- **Affected Directories & Files:**
+  - `queue_backend/api/ml_trainer.py`: Created canonical ML training module inside Django consolidating CSV loading, schema standardization, arrival-time feature extraction, `RandomForestRegressor(n_estimators=100, random_state=42)` training, evaluation, and Joblib serialization.
+  - `queue_backend/api/management/commands/train_model.py`: Added `python manage.py train_model` Django CLI command (supports `--data-dir` and `--output` overrides and hot-reloads the in-memory singleton).
+  - `queue_backend/api/ml_service.py`: Enhanced `WaitTimePredictor.load_model(auto_train=True)` to automatically train and save `queue_backend/api/wait_time_rf_model.joblib` from CSV datasets when no pre-built `.joblib` artifact is present on disk, while preserving the Analytical AST fallback if datasets are unavailable.
+  - `queue_backend/api/apps.py`: Updated startup preloader to skip preloading during `train_model`, `makemigrations`, `migrate`, and `collectstatic` commands.
+  - `main.py`: Deleted obsolete root trial script (and root `__pycache__/`) after migrating all training logic into `queue_backend/api/ml_trainer.py` with zero external code dependencies.
+  - `queue_backend/api/tests.py`: Added `test_auto_trains_when_joblib_missing_and_matches_prediction` and `test_ast_fallback_when_model_and_auto_train_disabled` verifying identical deterministic predictions without a pre-existing `.joblib` file.
+- **Verification Results:**
+  - `python manage.py train_model`: MAE = `9.68 min`, RMSE = `21.07 min`, $R^2 = 0.9083$, `+83.62%` over naive baseline (`59.09 min`).
+  - `python manage.py test api`: **6/6 tests passed in `0.670s`**, confirming auto-trained model produces bit-identical predictions when `.joblib` is absent.
 
 ### [Prompt Work / Working Tree] — 2026-11-15: Real-Time WebSocket Synchronization with Django Channels, Daphne ASGI Server, and Zero-Latency Broadcast Layer
 - **Type:** Full-Stack Networking & Real-Time Transport Architecture (`feat` / `websockets` / `channels`)

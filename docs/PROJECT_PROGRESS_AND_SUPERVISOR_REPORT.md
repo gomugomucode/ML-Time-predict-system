@@ -400,11 +400,12 @@ cd ML-Time-predict-system
 # 2. Activate Python virtual environment
 .venv\Scripts\activate
 
-# 3. (Optional) Run the complete data pipeline and retrain model
-python main.py
-
-# 4. Start the Django REST backend server
+# 3. Enter Django backend & (optional) train/retrain model manually
+#    (If wait_time_rf_model.joblib is missing, runserver auto-trains it automatically!)
 cd queue_backend
+python manage.py train_model
+
+# 4. Start the Django REST/ASGI backend server
 python manage.py runserver
 ```
 
